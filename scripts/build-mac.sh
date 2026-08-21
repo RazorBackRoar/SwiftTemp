@@ -82,7 +82,7 @@ mkdir -p "$RELEASE_DIR"
   --app-name "$APP_NAME" \
   --volname "$APP_NAME"
 
-# package-dmg.sh owns Desktop copy / mount / install. Keep only the DMG in-tree.
+# package-dmg.sh owns Desktop copy / mount. Never install into /Applications.
 rm -rf "$APP_PATH" "$RELEASE_DIR/.previous-build"
 
 echo "Build complete: $DMG_PATH"
