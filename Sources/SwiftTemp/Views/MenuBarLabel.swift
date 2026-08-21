@@ -4,6 +4,8 @@ struct MenuBarLabel: View {
     var monitor: SystemMonitor
     var settings: AppSettings
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         HStack(spacing: 3) {
             if settings.menuBarDisplayMode != .temperatureOnly {
@@ -13,13 +15,16 @@ struct MenuBarLabel: View {
                     size: 13
                 )
                 .frame(width: 14, alignment: .center)
+                .animation(reduceMotion ? nil : .spring(response: 0.55, dampingFraction: 0.7), value: temperatureFraction)
             }
 
             if settings.menuBarDisplayMode != .iconOnly {
                 Text(Temperature.compactFormat(celsius: monitor.temperatureCelsius, unit: settings.temperatureUnit))
                     .font(.system(size: 12.5, weight: .semibold, design: .monospaced))
                     .monospacedDigit()
+                    .contentTransition(.numericText())
                     .foregroundStyle(iconTint)
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.35), value: monitor.temperatureCelsius)
                     .frame(minWidth: 34, alignment: .trailing)
             }
 

@@ -7,6 +7,7 @@ struct MenuContentView: View {
 
     @Environment(\.openSettings) private var openSettings
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showTopCPU: Bool = false
 
     private static let timeFormatter: DateFormatter = {
@@ -28,10 +29,7 @@ struct MenuContentView: View {
                             .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(.secondary)
                     } icon: {
-                        Image(systemName: monitor.thermalState.symbolName)
-                            .font(.system(size: 13))
-                            .foregroundStyle(monitor.thermalState.tint)
-                            .frame(width: 16, alignment: .center)
+                        metricIcon(monitor.thermalState.symbolName, color: monitor.thermalState.tint)
                     }
 
                     Spacer()
@@ -53,10 +51,7 @@ struct MenuContentView: View {
                             .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(.secondary)
                     } icon: {
-                        Image(systemName: "thermometer.medium")
-                            .font(.system(size: 13))
-                            .foregroundStyle(Temperature.tint(celsius: monitor.temperatureCelsius))
-                            .frame(width: 16, alignment: .center)
+                        metricIcon("thermometer.high", color: Temperature.tint(celsius: monitor.temperatureCelsius))
                     }
 
                     Spacer()
@@ -64,8 +59,10 @@ struct MenuContentView: View {
                     Text(Temperature.format(celsius: monitor.temperatureCelsius, unit: settings.temperatureUnit))
                         .font(.system(size: 13, weight: .bold, design: .rounded))
                         .monospacedDigit()
+                        .contentTransition(.numericText())
                         .foregroundStyle(Temperature.tint(celsius: monitor.temperatureCelsius))
                         .frame(minWidth: 65, alignment: .trailing)
+                        .animation(reduceMotion ? nil : .spring(response: 0.45, dampingFraction: 0.72), value: monitor.temperatureCelsius)
                 }
                 .help(sensorHelpText)
 
@@ -78,10 +75,11 @@ struct MenuContentView: View {
                                     .font(.system(size: 12, weight: .medium))
                                     .foregroundStyle(.secondary)
                             } icon: {
-                                Image(systemName: (rpm ?? 0) > 0 ? "fanblades.fill" : "fanblades")
-                                    .font(.system(size: 13))
-                                    .foregroundStyle((rpm ?? 0) > 0 ? .blue : .secondary)
-                                    .frame(width: 16, alignment: .center)
+                                AnimatedFanIcon(
+                                    rpm: rpm,
+                                    color: (rpm ?? 0) > 0 ? .cyan : .secondary,
+                                    size: 14
+                                )
                             }
 
                             Spacer()
@@ -90,7 +88,7 @@ struct MenuContentView: View {
                                 Text(rpm > 0 ? "\(rpm) RPM" : "0 RPM")
                                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                                     .monospacedDigit()
-                                    .foregroundStyle(rpm > 0 ? .blue : .secondary)
+                                    .foregroundStyle(rpm > 0 ? .cyan : .secondary)
                                     .frame(width: 110, alignment: .trailing)
                             } else {
                                 Text("Not Available")
@@ -105,8 +103,14 @@ struct MenuContentView: View {
             .padding(10)
             .background(
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(Color.primary.opacity(0.04))
-                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.orange.opacity(0.11), Color.cyan.opacity(0.06)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .strokeBorder(Color.orange.opacity(0.18), lineWidth: 1)
             )
 
             // MARK: - CPU & Memory Card
@@ -133,8 +137,15 @@ struct MenuContentView: View {
                             Capsule()
                                 .fill(Color.primary.opacity(0.08))
                             Capsule()
-                                .fill(Color.green)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [.mint, .green],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
                                 .frame(width: geo.size.width * min(1, max(0, monitor.cpuUsage / 100)))
+                                .animation(reduceMotion ? nil : .easeOut(duration: 0.45), value: monitor.cpuUsage)
                         }
                     }
                     .frame(height: 4)
@@ -148,10 +159,7 @@ struct MenuContentView: View {
                                 .font(.system(size: 12, weight: .medium))
                                 .foregroundStyle(.secondary)
                         } icon: {
-                            Image(systemName: "memorychip")
-                                .font(.system(size: 13))
-                                .foregroundStyle(.blue)
-                                .frame(width: 16, alignment: .center)
+                            metricIcon("memorychip.fill", color: .indigo)
                         }
 
                         Spacer()
@@ -159,7 +167,7 @@ struct MenuContentView: View {
                         Text(String(format: "%.1f/%.0f GB", monitor.memoryUsedGB, monitor.memoryTotalGB))
                             .font(.system(size: 12, weight: .semibold, design: .monospaced))
                             .monospacedDigit()
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(.indigo)
 
                         Button {
                             NSApp.activate(ignoringOtherApps: true)
@@ -178,8 +186,15 @@ struct MenuContentView: View {
                             Capsule()
                                 .fill(Color.primary.opacity(0.08))
                             Capsule()
-                                .fill(Color.blue)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [.indigo, .blue],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
                                 .frame(width: geo.size.width * min(1, max(0, ratio)))
+                                .animation(reduceMotion ? nil : .easeOut(duration: 0.45), value: ratio)
                         }
                     }
                     .frame(height: 4)
@@ -228,16 +243,25 @@ struct MenuContentView: View {
             .padding(10)
             .background(
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(Color.primary.opacity(0.04))
-                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.green.opacity(0.08), Color.indigo.opacity(0.08)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .strokeBorder(Color.blue.opacity(0.15), lineWidth: 1)
             )
 
             // MARK: - Activity Graph Card (Always present for layout stability)
             VStack(alignment: .leading, spacing: 6) {
-                HStack {
+                HStack(spacing: 5) {
+                    Image(systemName: "chart.xyaxis.line")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.purple)
                     Text("CHIP TEMPERATURE HISTORY")
                         .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(.purple)
                     Spacer()
                     Text(settings.temperatureUnit.symbol)
                         .font(.system(size: 9, weight: .medium))
@@ -254,8 +278,14 @@ struct MenuContentView: View {
             .padding(10)
             .background(
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(Color.primary.opacity(0.04))
-                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.purple.opacity(0.09), Color.orange.opacity(0.06)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .strokeBorder(Color.purple.opacity(0.16), lineWidth: 1)
             )
 
             // MARK: - Actions & Controls
@@ -270,7 +300,8 @@ struct MenuContentView: View {
                     }
                     .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.borderedProminent)
+                .tint(monitor.isMonitoring ? .orange : .green)
 
                 Button {
                     monitor.refresh()
@@ -283,6 +314,7 @@ struct MenuContentView: View {
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
+                .tint(.cyan)
                 .disabled(!monitor.isMonitoring)
 
                 Button {
@@ -297,6 +329,7 @@ struct MenuContentView: View {
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
+                .tint(.indigo)
                 .keyboardShortcut(",", modifiers: .command)
             }
             .controlSize(.regular)
@@ -340,10 +373,7 @@ struct MenuContentView: View {
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.secondary)
             } icon: {
-                Image(systemName: "cpu")
-                    .font(.system(size: 13))
-                    .foregroundStyle(.green)
-                    .frame(width: 16, alignment: .center)
+                metricIcon("cpu", color: .green)
             }
 
             Spacer()
@@ -351,7 +381,9 @@ struct MenuContentView: View {
             Text(String(format: "%.1f%%", monitor.cpuUsage))
                 .font(.system(size: 12, weight: .semibold, design: .monospaced))
                 .monospacedDigit()
+                .contentTransition(.numericText())
                 .foregroundStyle(.green)
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.35), value: monitor.cpuUsage)
                 .frame(width: 55, alignment: .trailing)
 
             if showsDisclosure {
@@ -361,6 +393,14 @@ struct MenuContentView: View {
                     .frame(width: 10)
             }
         }
+    }
+
+    private func metricIcon(_ systemName: String, color: Color) -> some View {
+        Image(systemName: systemName)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(color)
+            .frame(width: 22, height: 22)
+            .background(color.opacity(0.13), in: RoundedRectangle(cornerRadius: 6))
     }
 
     private var graphSamples: [SystemSample] {
@@ -407,6 +447,7 @@ struct MenuContentView: View {
                     fillFraction: temperatureFraction,
                     size: 14
                 )
+                .animation(reduceMotion ? nil : .spring(response: 0.55, dampingFraction: 0.68), value: temperatureFraction)
                 Text("SwiftTemp")
                     .font(.system(size: 13, weight: .bold))
             }
