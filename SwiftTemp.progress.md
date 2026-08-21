@@ -4,3 +4,4 @@
 [x] Task 4: Implement targeted correctness, performance, reliability, and UI fixes (completed 2026-08-20)
 [x] Task 5: Run full validation and inspect packaged app (completed 2026-08-20)
 [x] Task 6: Perform second-pass whole-project review (completed 2026-08-20)
+[x] Task 7: Integrate into Apps workspace, align repo structure, build/package, and publish to GitHub (completed 2026-08-20)
