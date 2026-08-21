@@ -27,6 +27,32 @@ struct SwiftTempApp: App {
         .defaultPosition(.center)
         .windowResizability(.contentMinSize)
 
+        Window("CPU Breakdown", id: "cpuBreakdown") {
+            ProcessBreakdownView(
+                title: "CPU Breakdown",
+                subtitle: "Highest CPU first — right-click a row for Force Quit.",
+                systemImage: "cpu",
+                accent: .green,
+                load: ProcessBreakdownLoaders.cpu
+            )
+        }
+        .defaultSize(width: 480, height: 420)
+        .defaultPosition(.center)
+        .windowResizability(.contentMinSize)
+
+        Window("GPU Breakdown", id: "gpuBreakdown") {
+            ProcessBreakdownView(
+                title: "GPU Breakdown",
+                subtitle: "Highest Metal GPU time first — right-click a row for Force Quit.",
+                systemImage: "display",
+                accent: .blue,
+                load: ProcessBreakdownLoaders.gpu
+            )
+        }
+        .defaultSize(width: 480, height: 420)
+        .defaultPosition(.center)
+        .windowResizability(.contentMinSize)
+
         Settings {
             SettingsView(settings: settings, monitor: monitor)
         }

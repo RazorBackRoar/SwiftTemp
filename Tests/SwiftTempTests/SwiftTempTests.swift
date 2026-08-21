@@ -138,6 +138,49 @@ final class SwiftTempTests: XCTestCase {
         "PerformanceStatistics" = {"Device Active" = 0.5}
         """
         XCTAssertEqual(GPUUsage.parsePerformanceStatistics(activeSample), 50)
+
+        let compactIoreg = """
+        "PerformanceStatistics" = {"In use system memory (driver)"=0,"Tiler Utilization %"=16,"Renderer Utilization %"=23,"Device Utilization %"=23}
+        """
+        XCTAssertEqual(GPUUsage.parsePerformanceStatistics(compactIoreg), 23)
+    }
+
+    func testGPUUsageReadsThisMacWhenAvailable() async {
+        let value = await GPUUsage.current()
+        XCTAssertNotNil(value, "IOAccelerator PerformanceStatistics should be readable on this Mac")
+        if let value {
+            XCTAssertGreaterThanOrEqual(value, 0)
+            XCTAssertLessThanOrEqual(value, 100)
+        }
+    }
+
+    func testParsesGPUUserClientCreatorAndAppUsage() {
+        let parsed = ProcessGPUScanner.parseCreator("pid 444, WindowServer")
+        XCTAssertEqual(parsed?.pid, 444)
+        XCTAssertEqual(parsed?.name, "WindowServer")
+        XCTAssertNil(ProcessGPUScanner.parseCreator("not a creator"))
+
+        let usage: [[String: Any]] = [
+            ["API": "Metal", "accumulatedGPUTime": 1_000_000],
+            ["API": "Metal", "accumulatedGPUTime": 2_500_000]
+        ]
+        XCTAssertEqual(ProcessGPUScanner.accumulatedGPUTime(fromAppUsage: usage), 3_500_000)
+        XCTAssertEqual(ProcessGPUScanner.accumulatedGPUTime(fromAppUsage: []), 0)
+    }
+
+    func testGPUClientSnapshotFindsMetalProcesses() {
+        let totals = ProcessGPUScanner.accumulatedTimesByPID()
+        XCTAssertFalse(totals.isEmpty, "AGXDeviceUserClient should list GPU clients on this Mac")
+        XCTAssertTrue(totals.values.contains { $0.nanoseconds > 0 })
+    }
+
+    func testCPURankedSnapshotReturnsFinitePercents() {
+        let rows = ProcessCPUScanner.rankedSnapshot(limit: 8, sampleSeconds: 0.6)
+        for row in rows {
+            XCTAssertGreaterThan(row.cpuPercent, 0)
+            XCTAssertLessThanOrEqual(row.cpuPercent, Double(ProcessInfo.processInfo.activeProcessorCount) * 100)
+            XCTAssertFalse(row.name.isEmpty)
+        }
     }
 
     func testSMCHardwareIntegrationWhenAvailable() {

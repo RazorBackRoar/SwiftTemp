@@ -103,17 +103,21 @@ struct MenuContentView: View {
             VStack(spacing: 14) {
                 // CPU
                 VStack(spacing: 4) {
-                    if settings.showTopCPUApps {
-                        Button {
-                            showTopCPU.toggle()
-                            monitor.setTopProcessesVisible(showTopCPU)
-                        } label: {
-                            cpuSummary(showsDisclosure: true)
+                    HStack {
+                        cpuSummary()
+                        if settings.showTopCPUApps {
+                            Button {
+                                showTopCPU.toggle()
+                                monitor.setTopProcessesVisible(showTopCPU)
+                            } label: {
+                                Image(systemName: showTopCPU ? "chevron.down" : "chevron.right")
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 10)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityHint("Shows or hides the highest CPU-using processes")
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityHint("Shows or hides the highest CPU-using processes")
-                    } else {
-                        cpuSummary(showsDisclosure: false)
                     }
 
                     GeometryReader { geo in
@@ -151,6 +155,8 @@ struct MenuContentView: View {
                                 .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(.secondary)
                         }
+
+                        detailsButton(windowID: "gpuBreakdown", tint: .blue)
                     }
 
                     GeometryReader { geo in
@@ -183,15 +189,7 @@ struct MenuContentView: View {
                             .monospacedDigit()
                             .foregroundStyle(.red)
 
-                        Button {
-                            NSApp.activate(ignoringOtherApps: true)
-                            openWindow(id: "memoryBreakdown")
-                        } label: {
-                            Text("Details")
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundStyle(.red)
-                        }
-                        .buttonStyle(.plain)
+                        detailsButton(windowID: "memoryBreakdown", tint: .red)
                     }
 
                     GeometryReader { geo in
@@ -215,7 +213,7 @@ struct MenuContentView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("TOP CPU PROCESSES")
                             .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(.secondary)
 
                         let topList = monitor.topCPUProcesses
                         if topList.isEmpty {
@@ -265,7 +263,7 @@ struct MenuContentView: View {
                     Spacer()
                     Text(settings.temperatureUnit.symbol)
                         .font(.system(size: 9, weight: .medium))
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(.secondary)
                 }
 
                 HistoryGraphView(
@@ -281,33 +279,44 @@ struct MenuContentView: View {
             )
 
             // MARK: - Actions & Controls
-            HStack(spacing: 6) {
+            HStack(spacing: 8) {
                 Button {
                     monitor.setMonitoring(!monitor.isMonitoring)
                 } label: {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 5) {
                         Image(systemName: monitor.isMonitoring ? "pause.fill" : "play.fill")
-                            .font(.system(size: 10))
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(monitor.isMonitoring ? Color.orange : Color.green)
                         Text(monitor.isMonitoring ? "Pause" : "Resume")
+                            .foregroundStyle(.primary)
                     }
                     .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(monitor.isMonitoring ? .orange : .green)
+                .buttonStyle(MenuActionButtonStyle())
 
                 Button {
                     monitor.refresh()
                 } label: {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 5) {
                         Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 10))
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(.blue)
                         Text("Refresh")
+                            .foregroundStyle(.primary)
                     }
                     .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
+                .buttonStyle(MenuActionButtonStyle())
                 .disabled(!monitor.isMonitoring)
+            }
+
+            HStack(spacing: 8) {
+                Text("Updated \(Self.timeFormatter.string(from: monitor.lastUpdated))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+
+                Spacer(minLength: 8)
 
                 Button {
                     NSApp.activate(ignoringOtherApps: true)
@@ -315,38 +324,26 @@ struct MenuContentView: View {
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "gearshape")
-                            .font(.system(size: 10))
-                        Text("Settings…")
+                            .font(.system(size: 10, weight: .semibold))
+                        Text("Settings")
                     }
-                    .frame(maxWidth: .infinity)
+                    .foregroundStyle(.primary)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.secondary)
+                .buttonStyle(MenuActionButtonStyle())
                 .keyboardShortcut(",", modifiers: .command)
-            }
-            .controlSize(.regular)
-
-            HStack {
-                Text("Updated \(Self.timeFormatter.string(from: monitor.lastUpdated))")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-
-                Spacer()
 
                 Button {
                     NSApplication.shared.terminate(nil)
                 } label: {
                     Text("Quit")
-                        .fontWeight(.medium)
-                        .padding(.horizontal, 4)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.red)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.red)
-                .controlSize(.regular)
+                .buttonStyle(MenuActionButtonStyle())
             }
         }
         .padding(12)
-        .frame(width: 280)
+        .frame(width: 300)
         .onDisappear {
             showTopCPU = false
             monitor.setTopProcessesVisible(false)
@@ -359,7 +356,7 @@ struct MenuContentView: View {
         }
     }
 
-    private func cpuSummary(showsDisclosure: Bool) -> some View {
+    private func cpuSummary() -> some View {
         HStack {
             metricIcon("cpu", color: .green)
                 .accessibilityHidden(true)
@@ -376,13 +373,21 @@ struct MenuContentView: View {
                 .foregroundStyle(.green)
                 .frame(width: 55, alignment: .trailing)
 
-            if showsDisclosure {
-                Image(systemName: showTopCPU ? "chevron.down" : "chevron.right")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 10)
-            }
+            detailsButton(windowID: "cpuBreakdown", tint: .green)
         }
+    }
+
+    private func detailsButton(windowID: String, tint: Color) -> some View {
+        Button {
+            NSApp.activate(ignoringOtherApps: true)
+            openWindow(id: windowID)
+        } label: {
+            Text("Details")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(tint)
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("Shows which processes are using this resource")
     }
 
     private func metricIcon(_ systemName: String, color: Color) -> some View {
@@ -465,5 +470,28 @@ struct MenuContentView: View {
                     .fill(monitor.isMonitoring ? Color.green.opacity(0.12) : Color.secondary.opacity(0.12))
             )
         }
+    }
+}
+
+private struct MenuActionButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        MenuActionButton(configuration: configuration)
+    }
+}
+
+private struct MenuActionButton: View {
+    let configuration: ButtonStyle.Configuration
+    @Environment(\.isEnabled) private var isEnabled
+
+    var body: some View {
+        configuration.label
+            .font(.system(size: 12, weight: .semibold))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(Color.primary.opacity(0.10))
+            )
+            .opacity(isEnabled ? (configuration.isPressed ? 0.72 : 1) : 0.45)
     }
 }

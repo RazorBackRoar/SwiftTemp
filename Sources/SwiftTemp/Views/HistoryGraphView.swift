@@ -50,8 +50,8 @@ struct HistoryGraphView: View {
                 AxisValueLabel {
                     if let number = value.as(Double.self) {
                         Text("\(Int(number.rounded()))")
-                            .font(.system(size: 8, weight: .medium, design: .monospaced))
-                            .foregroundStyle(.secondary)
+                            .font(.system(size: 9, weight: .medium, design: .monospaced))
+                            .foregroundStyle(.primary.opacity(0.72))
                     }
                 }
             }
@@ -68,7 +68,7 @@ struct HistoryGraphView: View {
             if chartSamples.count < 2 {
                 Text("Waiting for sensor data")
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.secondary)
             }
         }
         .accessibilityLabel("Experimental chip temperature history chart")

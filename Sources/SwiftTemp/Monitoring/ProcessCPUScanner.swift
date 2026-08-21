@@ -16,7 +16,15 @@ final class ProcessCPUScanner {
         previousTaskTimes.removeAll(keepingCapacity: true)
     }
 
-    func topProcesses(limit: Int = 3) -> [ProcessCPUInfo] {
+    /// Two samples ~0.6s apart so the breakdown window can rank live CPU use.
+    static func rankedSnapshot(limit: Int = 15, sampleSeconds: Double = 0.6) -> [ProcessCPUInfo] {
+        let scanner = ProcessCPUScanner()
+        _ = scanner.topProcesses(limit: 512, minimumPercent: 0)
+        Thread.sleep(forTimeInterval: max(0.4, sampleSeconds))
+        return scanner.topProcesses(limit: limit, minimumPercent: 0.05)
+    }
+
+    func topProcesses(limit: Int = 3, minimumPercent: Double = 1) -> [ProcessCPUInfo] {
         let pidSize = MemoryLayout<pid_t>.size
         let estimatedBytes = proc_listpids(UInt32(PROC_ALL_PIDS), 0, nil, 0)
         guard estimatedBytes > 0 else { return [] }
@@ -54,7 +62,7 @@ final class ProcessCPUScanner {
             let usedSeconds = Double(userDelta + systemDelta) / 1_000_000_000
             let percent = min(maximumPercent, max(0, (usedSeconds / elapsedSeconds) * 100))
 
-            if percent >= 1 {
+            if percent >= minimumPercent {
                 let name = processName(for: pid) ?? "PID \(pid)"
                 cpuInfos.append(ProcessCPUInfo(id: pid, pid: pid, name: name, cpuPercent: percent))
             }

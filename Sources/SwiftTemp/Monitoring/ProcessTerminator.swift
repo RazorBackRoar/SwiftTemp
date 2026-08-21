@@ -7,16 +7,21 @@ enum ProcessTerminator {
     /// reuse between the displayed snapshot and the user action.
     @discardableResult
     static func terminate(process: ProcessMemoryInfo, force: Bool) -> Bool {
-        guard currentName(for: process.pid) == process.name else {
-            AppLogger.system.error("Refusing to signal PID \(process.pid, privacy: .public) because the process identity changed")
+        terminate(pid: process.pid, name: process.name, force: force)
+    }
+
+    @discardableResult
+    static func terminate(pid: pid_t, name: String, force: Bool) -> Bool {
+        guard currentName(for: pid) == name else {
+            AppLogger.system.error("Refusing to signal PID \(pid, privacy: .public) because the process identity changed")
             return false
         }
 
         let signal: Int32 = force ? SIGKILL : SIGTERM
-        let result = kill(process.pid, signal)
+        let result = kill(pid, signal)
         if result != 0 {
             AppLogger.system.error(
-                "kill(pid: \(process.pid, privacy: .public), signal: \(signal, privacy: .public)) failed, errno \(errno, privacy: .public)"
+                "kill(pid: \(pid, privacy: .public), signal: \(signal, privacy: .public)) failed, errno \(errno, privacy: .public)"
             )
         }
         return result == 0
