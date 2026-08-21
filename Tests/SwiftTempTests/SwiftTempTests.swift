@@ -27,7 +27,7 @@ final class SwiftTempTests: XCTestCase {
     func testAppSettingsDefaultsAndLegacyMenuValues() {
         let defaults = isolatedDefaults()
         let settings = AppSettings(defaults: defaults)
-        XCTAssertEqual(settings.pollInterval, 2)
+        XCTAssertEqual(settings.pollInterval, 1)
         XCTAssertEqual(settings.temperatureUnit, .fahrenheit)
         XCTAssertEqual(settings.menuBarDisplayMode, .temperatureAndSystem)
         XCTAssertFalse(settings.highTemperatureAlertsEnabled)
@@ -45,8 +45,8 @@ final class SwiftTempTests: XCTestCase {
         defaults.set(500, forKey: AppSettings.Keys.highTempThresholdFahrenheit)
 
         let settings = AppSettings(defaults: defaults)
-        XCTAssertEqual(settings.pollInterval, 2)
-        XCTAssertEqual(settings.graphWindowMinutes, 15)
+        XCTAssertEqual(settings.pollInterval, 1)
+        XCTAssertEqual(settings.graphWindowMinutes, 5)
         XCTAssertEqual(settings.historyRetentionMinutes, 60)
         XCTAssertEqual(settings.highTempThresholdFahrenheit, 200)
     }

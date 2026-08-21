@@ -70,7 +70,7 @@ The latest release is available on the [Releases page](https://github.com/RazorB
 
 Apple’s supported thermal API on macOS is `ProcessInfo.thermalState`: a system-wide pressure state, not a temperature in degrees. SwiftTemp treats this as the authoritative health signal.
 
-To provide an optional degree value, `SMCConnection.swift` uses the private AppleSMC IOKit protocol. Apple does not document this protocol or guarantee stable sensor keys. The implementation decodes Apple Silicon `flt ` values as little-endian IEEE-754 and legacy `sp78` values as big-endian signed 8.8 fixed point.
+To provide an optional degree value, `SMCConnection.swift` uses the private AppleSMC IOKit protocol. Apple does not document this protocol or guarantee stable sensor keys. The implementation decodes Apple Silicon `flt` values as little-endian IEEE-754 and legacy `sp78` values as big-endian signed 8.8 fixed point.
 
 At launch, sensor discovery runs off the main actor. SwiftTemp accepts only plausible compute-family keys (`Tp*`, `Te*`, and `Tg*`), retains the 12 hottest initial candidates to bound recurring IOKit work, and displays the hottest current tracked reading. It intentionally does **not** treat `TCHP` as “SoC average”; public reverse-engineering references associate that key with charger/heat-pipe temperature. If no plausible compute key is available, the degree value and graph remain unavailable.
 
@@ -115,7 +115,7 @@ swift --version
 
 ## Project structure
 
-```
+```text
 SwiftTemp/
 ├── Package.swift
 ├── README.md
@@ -232,7 +232,8 @@ it's actually running from `/Applications`.
 
 ## Settings reference
 
-**General**
+### General
+
 - *Temperature unit* — Fahrenheit / Celsius. Default **Fahrenheit**; applies to the menu bar, popover, graph, and accessibility text.
 - *Refresh interval* — 1/2/5/10/30/60 seconds. Default **2 seconds**. Polling is rescheduled immediately with run-loop tolerance for timer coalescing.
 - *Menu bar* — Icon Only / Temperature Only / Temperature + System Stats.
@@ -240,12 +241,14 @@ it's actually running from `/Applications`.
 - *Show Dock icon* — off by default; updates the activation policy without relaunching.
 - *Launch at login* — uses `SMAppService.mainApp` and reports when System Settings approval is required.
 
-**Alerts**
+### Alerts
+
 - *Thermal-state alerts* — Off / Serious or Critical / Critical Only. Default **Off**.
 - *Experimental temperature threshold* — separate opt-in toggle and 130–200°F threshold. It alerts on an upward crossing and rearms after dropping 5°F below the threshold.
 - Notification permission is requested in context when either alert feature is enabled, not on first launch.
 
-**History**
+### History
+
 - *Graph shows* — 1/5/15/60 minutes. Default **15 minutes**.
 - *Keep history* — 1/5/15/60 minutes. Default **60 minutes**. Retention is time-based and remains correct when the polling interval changes.
 - *Verbose diagnostic logging* — logs each sample at debug level. History remains in memory only and is cleared at quit.

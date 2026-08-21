@@ -24,42 +24,40 @@ struct MenuContentView: View {
             // MARK: - Thermal & Sensors Card
             VStack(spacing: 8) {
                 HStack {
-                    Label {
-                        Text("Thermal State")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.secondary)
-                    } icon: {
-                        metricIcon(monitor.thermalState.symbolName, color: monitor.thermalState.tint)
-                    }
+                    metricIcon(monitor.thermalState.symbolName, color: .green)
+                        .accessibilityHidden(true)
+
+                    Text("Thermal State")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
 
                     Spacer()
 
                     Text(monitor.thermalState.label)
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(monitor.thermalState.tint)
+                        .foregroundStyle(.green)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
                         .background(
                             Capsule()
-                                .fill(monitor.thermalState.tint.opacity(0.14))
+                                .fill(Color.green.opacity(0.14))
                         )
                 }
 
                 HStack {
-                    Label {
-                        Text("Chip Sensor")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.secondary)
-                    } icon: {
-                        metricIcon("thermometer.high", color: Temperature.tint(celsius: monitor.temperatureCelsius))
-                    }
+                    metricIcon("thermometer.high", color: .orange)
+                        .accessibilityHidden(true)
+
+                    Text("Chip Sensor")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
 
                     Spacer()
 
                     Text(Temperature.format(celsius: monitor.temperatureCelsius, unit: settings.temperatureUnit))
                         .font(.system(size: 13, weight: .bold, design: .rounded))
                         .monospacedDigit()
-                        .foregroundStyle(Temperature.tint(celsius: monitor.temperatureCelsius))
+                        .foregroundStyle(.orange)
                         .frame(minWidth: 65, alignment: .trailing)
                 }
                 .help(sensorHelpText)
@@ -68,17 +66,15 @@ struct MenuContentView: View {
                     ForEach(0..<fanCount, id: \.self) { i in
                         let rpm: Int? = i < monitor.fanSpeeds.count ? monitor.fanSpeeds[i] : nil
                         HStack {
-                            Label {
-                                Text(fanCount == 1 ? "Fan Speed" : "Fan \(i + 1)")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundStyle(.secondary)
-                            } icon: {
-                                AnimatedFanIcon(
-                                    rpm: rpm,
-                                    color: (rpm ?? 0) > 0 ? .cyan : .secondary,
-                                    size: 14
-                                )
-                            }
+                            AnimatedFanIcon(
+                                rpm: rpm,
+                                color: (rpm ?? 0) > 0 ? .blue : .secondary,
+                                size: 14
+                            )
+
+                            Text(fanCount == 1 ? "Fan" : "Fan \(i + 1)")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(.secondary)
 
                             Spacer()
 
@@ -86,7 +82,7 @@ struct MenuContentView: View {
                                 Text(rpm > 0 ? "\(rpm) RPM" : "0 RPM")
                                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                                     .monospacedDigit()
-                                    .foregroundStyle(rpm > 0 ? .cyan : .secondary)
+                                    .foregroundStyle(rpm > 0 ? .blue : .secondary)
                                     .frame(width: 110, alignment: .trailing)
                             } else {
                                 Text("Not Available")
@@ -100,15 +96,7 @@ struct MenuContentView: View {
             }
             .padding(10)
             .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.orange.opacity(0.11), Color.cyan.opacity(0.06)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .strokeBorder(Color.orange.opacity(0.18), lineWidth: 1)
+                cardBackground
             )
 
             // MARK: - CPU / GPU / Memory Card
@@ -133,13 +121,7 @@ struct MenuContentView: View {
                             Capsule()
                                 .fill(Color.primary.opacity(0.08))
                             Capsule()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [.mint, .green],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
+                                .fill(.green)
                                 .frame(width: geo.size.width * min(1, max(0, monitor.cpuUsage / 100)))
                                 .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: monitor.cpuUsage)
                         }
@@ -176,13 +158,7 @@ struct MenuContentView: View {
                             Capsule()
                                 .fill(Color.primary.opacity(0.08))
                             Capsule()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [.cyan, .blue],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
+                                .fill(.blue)
                                 .frame(width: geo.size.width * min(1, max(0, (monitor.gpuUsage ?? 0) / 100)))
                                 .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: monitor.gpuUsage ?? 0)
                         }
@@ -193,7 +169,7 @@ struct MenuContentView: View {
                 // Memory
                 VStack(spacing: 4) {
                     HStack {
-                        metricIcon("memorychip", color: .purple)
+                        metricIcon("memorychip", color: .red)
                             .accessibilityHidden(true)
 
                         Text("Memory")
@@ -205,7 +181,7 @@ struct MenuContentView: View {
                         Text(String(format: "%.1f / %.0f GB", monitor.memoryUsedGB, monitor.memoryTotalGB))
                             .font(.system(size: 12, weight: .semibold, design: .monospaced))
                             .monospacedDigit()
-                            .foregroundStyle(.purple)
+                            .foregroundStyle(.red)
 
                         Button {
                             NSApp.activate(ignoringOtherApps: true)
@@ -213,7 +189,7 @@ struct MenuContentView: View {
                         } label: {
                             Text("Details")
                                 .font(.system(size: 11, weight: .medium))
-                                .foregroundStyle(.purple)
+                                .foregroundStyle(.red)
                         }
                         .buttonStyle(.plain)
                     }
@@ -224,13 +200,7 @@ struct MenuContentView: View {
                             Capsule()
                                 .fill(Color.primary.opacity(0.08))
                             Capsule()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [.pink, .purple],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
+                                .fill(.red)
                                 .frame(width: geo.size.width * min(1, max(0, ratio)))
                                 .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: ratio)
                         }
@@ -280,15 +250,7 @@ struct MenuContentView: View {
             }
             .padding(10)
             .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.green.opacity(0.05), Color.purple.opacity(0.04)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .strokeBorder(Color.purple.opacity(0.12), lineWidth: 1)
+                cardBackground
             )
 
             // MARK: - Activity Graph Card (Always present for layout stability)
@@ -296,10 +258,10 @@ struct MenuContentView: View {
                 HStack(spacing: 5) {
                     Image(systemName: "chart.xyaxis.line")
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(.purple)
+                        .foregroundStyle(.orange)
                     Text("CHIP TEMPERATURE HISTORY")
                         .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(.purple)
+                        .foregroundStyle(.orange)
                     Spacer()
                     Text(settings.temperatureUnit.symbol)
                         .font(.system(size: 9, weight: .medium))
@@ -315,15 +277,7 @@ struct MenuContentView: View {
             }
             .padding(10)
             .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.purple.opacity(0.09), Color.orange.opacity(0.06)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .strokeBorder(Color.purple.opacity(0.16), lineWidth: 1)
+                cardBackground
             )
 
             // MARK: - Actions & Controls
@@ -351,8 +305,8 @@ struct MenuContentView: View {
                     }
                     .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
-                .tint(.cyan)
+                .buttonStyle(.borderedProminent)
+                .tint(.blue)
                 .disabled(!monitor.isMonitoring)
 
                 Button {
@@ -366,8 +320,8 @@ struct MenuContentView: View {
                     }
                     .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
-                .tint(.indigo)
+                .buttonStyle(.borderedProminent)
+                .tint(.secondary)
                 .keyboardShortcut(",", modifiers: .command)
             }
             .controlSize(.regular)
@@ -387,6 +341,7 @@ struct MenuContentView: View {
                         .padding(.horizontal, 4)
                 }
                 .buttonStyle(.borderedProminent)
+                .tint(.red)
                 .controlSize(.regular)
             }
         }
@@ -438,6 +393,12 @@ struct MenuContentView: View {
             .background(color.opacity(0.13), in: RoundedRectangle(cornerRadius: 6))
     }
 
+    private var cardBackground: some View {
+        RoundedRectangle(cornerRadius: 10)
+            .fill(Color.primary.opacity(0.04))
+            .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+    }
+
     private var graphSamples: [SystemSample] {
         let cutoff = Date().addingTimeInterval(-settings.graphWindowMinutes * 60)
         let filtered = monitor.history.filter {
@@ -478,13 +439,13 @@ struct MenuContentView: View {
         HStack {
             HStack(spacing: 6) {
                 ThermostatIcon(
-                    tintColor: monitor.temperatureCelsius.map { Temperature.tint(celsius: $0) } ?? monitor.thermalState.tint,
+                    tintColor: .orange,
                     fillFraction: temperatureFraction,
                     size: 14
                 )
-                .animation(reduceMotion ? nil : .spring(response: 0.55, dampingFraction: 0.68), value: temperatureFraction)
                 Text("SwiftTemp")
                     .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(.primary)
             }
 
             Spacer()

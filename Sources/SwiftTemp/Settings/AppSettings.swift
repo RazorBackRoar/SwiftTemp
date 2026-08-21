@@ -115,12 +115,12 @@ final class AppSettings {
         pollInterval = Self.validOption(
             defaults.object(forKey: Keys.pollInterval) as? Double,
             options: Self.pollIntervalOptions,
-            fallback: 2
+            fallback: 1
         )
         graphWindowMinutes = Self.validOption(
             defaults.object(forKey: Keys.graphWindowMinutes) as? Double,
             options: Self.historyWindowOptions,
-            fallback: 15
+            fallback: 5
         )
         historyRetentionMinutes = Self.validOption(
             defaults.object(forKey: Keys.historyRetentionMinutes) as? Double,

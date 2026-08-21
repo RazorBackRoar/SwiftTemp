@@ -1,3 +1,5 @@
+# SwiftTemp Progress
+
 [x] Task 1: Inventory project and load governing rules (completed 2026-08-20)
 [x] Task 2: Establish debug test and clean release-build baselines (completed 2026-08-20)
 [x] Task 3: Audit monitoring, sensor accuracy, concurrency, lifecycle, UI, settings, tests, assets, and packaging (completed 2026-08-20)
@@ -8,3 +10,5 @@
 [x] Task 8: Replace the app icon with a high-resolution orange and blue macOS squircle (completed 2026-08-20)
 [x] Task 9: Add distinct menu colors, improved metric icons, and accessible live animations (completed 2026-08-20)
 [x] Task 10: Simplify icon, add GPU utilization row, restructure CPU/GPU/Memory colors, and remove turning number animations (completed 2026-08-20)
+[x] Task 11: Apply system color palette (.green/.blue/.red/.orange) for CPU, GPU, Memory, fans, chip sensor, and controls (completed 2026-08-20)
+[x] Task 12: Default to faster polling and shorter graph window; make control buttons prominent (completed 2026-08-20)

@@ -8,7 +8,7 @@ struct MenuBarLabel: View {
         HStack(spacing: 3) {
             if settings.menuBarDisplayMode != .temperatureOnly {
                 ThermostatIcon(
-                    tintColor: iconTint,
+                    tintColor: .orange,
                     fillFraction: temperatureFraction,
                     size: 13
                 )
@@ -19,7 +19,7 @@ struct MenuBarLabel: View {
                 Text(Temperature.compactFormat(celsius: monitor.temperatureCelsius, unit: settings.temperatureUnit))
                     .font(.system(size: 12.5, weight: .semibold, design: .monospaced))
                     .monospacedDigit()
-                    .foregroundStyle(iconTint)
+                    .foregroundStyle(.orange)
                     .frame(minWidth: 34, alignment: .trailing)
             }
 
@@ -33,7 +33,7 @@ struct MenuBarLabel: View {
                 Text(String(format: "%.1fG", monitor.memoryUsedGB))
                     .font(.system(size: 12.5, weight: .semibold, design: .monospaced))
                     .monospacedDigit()
-                    .foregroundStyle(.purple)
+                    .foregroundStyle(.red)
                     .frame(minWidth: 38, alignment: .trailing)
             }
         }
@@ -41,10 +41,6 @@ struct MenuBarLabel: View {
         .fixedSize(horizontal: true, vertical: true)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
-    }
-
-    private var iconTint: Color {
-        monitor.temperatureCelsius.map { Temperature.tint(celsius: $0) } ?? monitor.thermalState.tint
     }
 
     private var temperatureFraction: Double {

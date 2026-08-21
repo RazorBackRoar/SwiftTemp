@@ -10,8 +10,8 @@ struct HistoryGraphView: View {
         let now = Date()
         let startTime = now.addingTimeInterval(-max(60, windowMinutes * 60))
         let chartSamples = temperatureSamples
-        let lineStyle = lineGradient(for: chartSamples)
-        let areaStyle = areaGradient(for: chartSamples)
+        let lineStyle: some ShapeStyle = Color.orange
+        let areaStyle = areaGradient(color: .orange)
 
         Chart {
             ForEach(chartSamples) { sample in
@@ -91,19 +91,8 @@ struct HistoryGraphView: View {
         return [lower, (lower + upper) / 2, upper]
     }
 
-    private func lineGradient(for samples: [SystemSample]) -> LinearGradient {
-        let mappedColors = samples.compactMap { sample in
-            sample.temperatureCelsius.map { Temperature.tint(celsius: $0) }
-        }
-        let colors = mappedColors.count > 1
-            ? mappedColors
-            : [mappedColors.first ?? .secondary, mappedColors.first ?? .secondary]
-        return LinearGradient(colors: colors, startPoint: .leading, endPoint: .trailing)
-    }
-
-    private func areaGradient(for samples: [SystemSample]) -> LinearGradient {
-        let color = samples.last?.temperatureCelsius.map { Temperature.tint(celsius: $0) } ?? .secondary
-        return LinearGradient(
+    private func areaGradient(color: Color) -> LinearGradient {
+        LinearGradient(
             colors: [color.opacity(0.24), color.opacity(0.02)],
             startPoint: .top,
             endPoint: .bottom
