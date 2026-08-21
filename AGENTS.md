@@ -38,7 +38,7 @@ Package a macOS `.app` and DMG with ad-hoc signing:
 ./scripts/build-mac.sh
 ```
 
-Output: `build/Release/SwiftTemp.dmg` only.
+Local output: `~/Desktop/SwiftTemp.dmg` only. CI keeps `build/Release/SwiftTemp.dmg`.
 
 ## Repository rules
 

@@ -85,4 +85,4 @@ mkdir -p "$RELEASE_DIR"
 # package-dmg.sh owns Desktop copy / mount. Never install into /Applications.
 rm -rf "$APP_PATH" "$RELEASE_DIR/.previous-build"
 
-echo "Build complete: $DMG_PATH"
+echo "Build complete: ${HOME}/Desktop/${APP_NAME}.dmg"
