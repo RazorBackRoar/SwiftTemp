@@ -27,12 +27,14 @@ enum ThermalNotifier {
         }
 
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
-            if let error {
-                AppLogger.system.error(
-                    "Notification authorization error: \(error.localizedDescription, privacy: .public)"
-                )
-            } else {
-                AppLogger.system.notice("Notification authorization granted: \(granted, privacy: .public)")
+            Task { @MainActor in
+                if let error {
+                    AppLogger.system.error(
+                        "Notification authorization error: \(error.localizedDescription, privacy: .public)"
+                    )
+                } else {
+                    AppLogger.system.notice("Notification authorization granted: \(granted, privacy: .public)")
+                }
             }
         }
     }
@@ -52,22 +54,22 @@ enum ThermalNotifier {
 
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
         UNUserNotificationCenter.current().add(request) { error in
-            if let error {
-                AppLogger.system.error("Failed to post notification: \(error.localizedDescription, privacy: .public)")
+            Task { @MainActor in
+                if let error {
+                    AppLogger.system.error("Failed to post notification: \(error.localizedDescription, privacy: .public)")
+                }
             }
         }
     }
 
-    private static var isAboveHighTemperatureThreshold = false
+    private static var highTemperatureLatch = HighTemperatureHysteresis()
 
     static func notifyHighTemperature(fahrenheit: Double, thresholdFahrenheit: Double) {
-        guard fahrenheit.isFinite, thresholdFahrenheit.isFinite else { return }
-        if fahrenheit < thresholdFahrenheit - 5 {
-            isAboveHighTemperatureThreshold = false
-            return
-        }
-        guard isAvailable, fahrenheit >= thresholdFahrenheit, !isAboveHighTemperatureThreshold else { return }
-        isAboveHighTemperatureThreshold = true
+        let shouldNotify = highTemperatureLatch.evaluate(
+            fahrenheit: fahrenheit,
+            thresholdFahrenheit: thresholdFahrenheit
+        )
+        guard isAvailable, shouldNotify else { return }
 
         let content = UNMutableNotificationContent()
         content.title = "Temperature Threshold Reached"
@@ -80,14 +82,18 @@ enum ThermalNotifier {
 
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
         UNUserNotificationCenter.current().add(request) { error in
-            if let error {
-                AppLogger.system.error("Failed to post high-temperature notification: \(error.localizedDescription, privacy: .public)")
+            Task { @MainActor in
+                if let error {
+                    AppLogger.system.error(
+                        "Failed to post high-temperature notification: \(error.localizedDescription, privacy: .public)"
+                    )
+                }
             }
         }
     }
 
     static func resetHighTemperatureState() {
-        isAboveHighTemperatureThreshold = false
+        highTemperatureLatch.reset()
     }
 
     static func shouldNotify(for state: ProcessInfo.ThermalState, threshold: NotificationThreshold) -> Bool {
@@ -99,5 +105,26 @@ enum ThermalNotifier {
         case .seriousOrAbove:
             return state == .serious || state == .critical
         }
+    }
+}
+
+/// Fires once on an upward crossing, then rearms after the reading drops
+/// 5°F below the configured threshold.
+struct HighTemperatureHysteresis: Equatable, Sendable {
+    private(set) var isLatched = false
+
+    mutating func evaluate(fahrenheit: Double, thresholdFahrenheit: Double) -> Bool {
+        guard fahrenheit.isFinite, thresholdFahrenheit.isFinite else { return false }
+        if fahrenheit < thresholdFahrenheit - 5 {
+            isLatched = false
+            return false
+        }
+        guard fahrenheit >= thresholdFahrenheit, !isLatched else { return false }
+        isLatched = true
+        return true
+    }
+
+    mutating func reset() {
+        isLatched = false
     }
 }

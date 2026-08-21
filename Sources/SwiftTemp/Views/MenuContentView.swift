@@ -59,10 +59,8 @@ struct MenuContentView: View {
                     Text(Temperature.format(celsius: monitor.temperatureCelsius, unit: settings.temperatureUnit))
                         .font(.system(size: 13, weight: .bold, design: .rounded))
                         .monospacedDigit()
-                        .contentTransition(.numericText())
                         .foregroundStyle(Temperature.tint(celsius: monitor.temperatureCelsius))
                         .frame(minWidth: 65, alignment: .trailing)
-                        .animation(reduceMotion ? nil : .spring(response: 0.45, dampingFraction: 0.72), value: monitor.temperatureCelsius)
                 }
                 .help(sensorHelpText)
 
@@ -113,15 +111,13 @@ struct MenuContentView: View {
                     .strokeBorder(Color.orange.opacity(0.18), lineWidth: 1)
             )
 
-            // MARK: - CPU & Memory Card
-            VStack(spacing: 8) {
-                // CPU Usage
+            // MARK: - CPU / GPU / Memory Card
+            VStack(spacing: 14) {
+                // CPU
                 VStack(spacing: 4) {
                     if settings.showTopCPUApps {
                         Button {
-                            withAnimation(.easeInOut(duration: 0.15)) {
-                                showTopCPU.toggle()
-                            }
+                            showTopCPU.toggle()
                             monitor.setTopProcessesVisible(showTopCPU)
                         } label: {
                             cpuSummary(showsDisclosure: true)
@@ -145,29 +141,71 @@ struct MenuContentView: View {
                                     )
                                 )
                                 .frame(width: geo.size.width * min(1, max(0, monitor.cpuUsage / 100)))
-                                .animation(reduceMotion ? nil : .easeOut(duration: 0.45), value: monitor.cpuUsage)
+                                .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: monitor.cpuUsage)
                         }
                     }
                     .frame(height: 4)
                 }
 
-                // Memory Used
+                // GPU
                 VStack(spacing: 4) {
                     HStack {
-                        Label {
-                            Text("Memory Used")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(.secondary)
-                        } icon: {
-                            metricIcon("memorychip.fill", color: .indigo)
-                        }
+                        metricIcon("display", color: .blue)
+                            .accessibilityHidden(true)
+
+                        Text("GPU")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.secondary)
 
                         Spacer()
 
-                        Text(String(format: "%.1f/%.0f GB", monitor.memoryUsedGB, monitor.memoryTotalGB))
+                        if let gpu = monitor.gpuUsage {
+                            Text(String(format: "%.0f%%", gpu))
+                                .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                                .monospacedDigit()
+                                .foregroundStyle(.blue)
+                        } else {
+                            Text("Not Available")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .fill(Color.primary.opacity(0.08))
+                            Capsule()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [.cyan, .blue],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .frame(width: geo.size.width * min(1, max(0, (monitor.gpuUsage ?? 0) / 100)))
+                                .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: monitor.gpuUsage ?? 0)
+                        }
+                    }
+                    .frame(height: 4)
+                }
+
+                // Memory
+                VStack(spacing: 4) {
+                    HStack {
+                        metricIcon("memorychip", color: .purple)
+                            .accessibilityHidden(true)
+
+                        Text("Memory")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.secondary)
+
+                        Spacer()
+
+                        Text(String(format: "%.1f / %.0f GB", monitor.memoryUsedGB, monitor.memoryTotalGB))
                             .font(.system(size: 12, weight: .semibold, design: .monospaced))
                             .monospacedDigit()
-                            .foregroundStyle(.indigo)
+                            .foregroundStyle(.purple)
 
                         Button {
                             NSApp.activate(ignoringOtherApps: true)
@@ -175,7 +213,7 @@ struct MenuContentView: View {
                         } label: {
                             Text("Details")
                                 .font(.system(size: 11, weight: .medium))
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(.purple)
                         }
                         .buttonStyle(.plain)
                     }
@@ -188,13 +226,13 @@ struct MenuContentView: View {
                             Capsule()
                                 .fill(
                                     LinearGradient(
-                                        colors: [.indigo, .blue],
+                                        colors: [.pink, .purple],
                                         startPoint: .leading,
                                         endPoint: .trailing
                                     )
                                 )
                                 .frame(width: geo.size.width * min(1, max(0, ratio)))
-                                .animation(reduceMotion ? nil : .easeOut(duration: 0.45), value: ratio)
+                                .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: ratio)
                         }
                     }
                     .frame(height: 4)
@@ -245,12 +283,12 @@ struct MenuContentView: View {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(
                         LinearGradient(
-                            colors: [Color.green.opacity(0.08), Color.indigo.opacity(0.08)],
+                            colors: [Color.green.opacity(0.05), Color.purple.opacity(0.04)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
-                    .strokeBorder(Color.blue.opacity(0.15), lineWidth: 1)
+                    .strokeBorder(Color.purple.opacity(0.12), lineWidth: 1)
             )
 
             // MARK: - Activity Graph Card (Always present for layout stability)
@@ -368,22 +406,19 @@ struct MenuContentView: View {
 
     private func cpuSummary(showsDisclosure: Bool) -> some View {
         HStack {
-            Label {
-                Text("CPU Usage")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.secondary)
-            } icon: {
-                metricIcon("cpu", color: .green)
-            }
+            metricIcon("cpu", color: .green)
+                .accessibilityHidden(true)
+
+            Text("CPU")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.secondary)
 
             Spacer()
 
             Text(String(format: "%.1f%%", monitor.cpuUsage))
                 .font(.system(size: 12, weight: .semibold, design: .monospaced))
                 .monospacedDigit()
-                .contentTransition(.numericText())
                 .foregroundStyle(.green)
-                .animation(reduceMotion ? nil : .easeOut(duration: 0.35), value: monitor.cpuUsage)
                 .frame(width: 55, alignment: .trailing)
 
             if showsDisclosure {

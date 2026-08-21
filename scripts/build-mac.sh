@@ -21,8 +21,7 @@ cd "$PROJECT_DIR"
 swift build -c release
 
 echo "Packaging $APP_NAME.app..."
-rm -rf "$RELEASE_DIR"/*.app "$RELEASE_DIR"/*.dmg
-rm -rf "$APP_PATH"
+rm -rf "$APP_PATH" "$DMG_PATH"
 mkdir -p "$APP_PATH/Contents/MacOS"
 mkdir -p "$APP_PATH/Contents/Resources"
 
@@ -83,6 +82,7 @@ mkdir -p "$RELEASE_DIR"
   --app-name "$APP_NAME" \
   --volname "$APP_NAME"
 
-rm -rf "$APP_PATH"
+# package-dmg.sh owns Desktop copy / mount / install. Keep only the DMG in-tree.
+rm -rf "$APP_PATH" "$RELEASE_DIR/.previous-build"
 
 echo "Build complete: $DMG_PATH"

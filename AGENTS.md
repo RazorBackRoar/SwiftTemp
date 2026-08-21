@@ -30,7 +30,7 @@ swift build
 swift test
 ```
 
-`swift test` requires the full Xcode.app.
+`swift test` requires the full Xcode.app. The project uses Swift 6 language mode.
 
 Package a macOS `.app` and DMG with ad-hoc signing:
 

@@ -7,3 +7,4 @@
 [x] Task 7: Integrate into Apps workspace, align repo structure, build/package, and publish to GitHub (completed 2026-08-20)
 [x] Task 8: Replace the app icon with a high-resolution orange and blue macOS squircle (completed 2026-08-20)
 [x] Task 9: Add distinct menu colors, improved metric icons, and accessible live animations (completed 2026-08-20)
+[x] Task 10: Simplify icon, add GPU utilization row, restructure CPU/GPU/Memory colors, and remove turning number animations (completed 2026-08-20)

@@ -91,6 +91,55 @@ final class SwiftTempTests: XCTestCase {
         XCTAssertTrue(ThermalNotifier.shouldNotify(for: .critical, threshold: .criticalOnly))
     }
 
+    func testHighTemperatureHysteresis() {
+        var latch = HighTemperatureHysteresis()
+        XCTAssertFalse(latch.evaluate(fahrenheit: 180, thresholdFahrenheit: 185))
+        XCTAssertTrue(latch.evaluate(fahrenheit: 185, thresholdFahrenheit: 185))
+        XCTAssertFalse(latch.evaluate(fahrenheit: 190, thresholdFahrenheit: 185))
+        XCTAssertFalse(latch.evaluate(fahrenheit: 180, thresholdFahrenheit: 185))
+        XCTAssertFalse(latch.evaluate(fahrenheit: 179.9, thresholdFahrenheit: 185))
+        XCTAssertTrue(latch.evaluate(fahrenheit: 185, thresholdFahrenheit: 185))
+        latch.reset()
+        XCTAssertTrue(latch.evaluate(fahrenheit: 200, thresholdFahrenheit: 185))
+        XCTAssertFalse(latch.evaluate(fahrenheit: .nan, thresholdFahrenheit: 185))
+    }
+
+    func testCPUUsageFirstSampleIsZeroThenFinite() {
+        var previous: host_cpu_load_info?
+        let first = CPUUsage.currentTotalUsage(previous: &previous)
+        XCTAssertEqual(first, 0)
+        XCTAssertNotNil(previous)
+        let second = CPUUsage.currentTotalUsage(previous: &previous)
+        XCTAssertGreaterThanOrEqual(second, 0)
+        XCTAssertLessThanOrEqual(second, 100)
+    }
+
+    func testMemoryUsageReportsPhysicalTotal() {
+        let snapshot = MemoryUsage.current()
+        let expectedTotal = Double(ProcessInfo.processInfo.physicalMemory) / 1_073_741_824.0
+        XCTAssertEqual(snapshot.totalGB, expectedTotal, accuracy: 0.01)
+        XCTAssertGreaterThanOrEqual(snapshot.usedGB, 0)
+        XCTAssertLessThanOrEqual(snapshot.usedGB, snapshot.totalGB * 1.5)
+    }
+
+    func testMenuBarDisplayModesCoverAllUserFacingCases() {
+        XCTAssertEqual(MenuBarDisplayMode.allCases.count, 3)
+        XCTAssertEqual(MenuBarDisplayMode(rawValue: "percentOnly"), .temperatureOnly)
+        XCTAssertEqual(MenuBarDisplayMode(rawValue: "iconAndPercent"), .temperatureAndSystem)
+    }
+
+    func testGPUUsageParsesDeviceUtilization() {
+        let sample = """
+        "PerformanceStatistics" = {"Device Utilization %" = 37}
+        """
+        XCTAssertEqual(GPUUsage.parsePerformanceStatistics(sample), 37)
+        XCTAssertNil(GPUUsage.parsePerformanceStatistics("no stats here"))
+        let activeSample = """
+        "PerformanceStatistics" = {"Device Active" = 0.5}
+        """
+        XCTAssertEqual(GPUUsage.parsePerformanceStatistics(activeSample), 50)
+    }
+
     func testSMCHardwareIntegrationWhenAvailable() {
         guard let connection = SMCConnection() else { return }
         XCTAssertTrue(connection.isOpen)
@@ -110,7 +159,7 @@ final class SwiftTempTests: XCTestCase {
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
         addTeardownBlock {
-            defaults.removePersistentDomain(forName: suiteName)
+            UserDefaults(suiteName: suiteName)?.removePersistentDomain(forName: suiteName)
         }
         return defaults
     }

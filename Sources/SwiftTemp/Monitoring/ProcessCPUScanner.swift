@@ -69,6 +69,6 @@ final class ProcessCPUScanner {
         var nameBuffer = [CChar](repeating: 0, count: Int(MAXPATHLEN))
         let size = proc_name(pid, &nameBuffer, UInt32(nameBuffer.count))
         guard size > 0 else { return nil }
-        return String(cString: nameBuffer)
+        return String(decoding: nameBuffer.prefix(Int(size)).map { UInt8(bitPattern: $0) }, as: UTF8.self)
     }
 }

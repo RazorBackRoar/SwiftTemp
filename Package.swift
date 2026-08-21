@@ -1,4 +1,5 @@
-// swift-tools-version: 5.10
+// swift-tools-version: 6.3
+
 import PackageDescription
 
 let package = Package(
@@ -18,12 +19,18 @@ let package = Package(
             path: "Sources/SwiftTemp",
             resources: [
                 .process("Resources")
+            ],
+            swiftSettings: [
+                .swiftLanguageMode(.v6)
             ]
         ),
         .testTarget(
             name: "SwiftTempTests",
             dependencies: ["SwiftTemp"],
-            path: "Tests/SwiftTempTests"
+            path: "Tests/SwiftTempTests",
+            swiftSettings: [
+                .swiftLanguageMode(.v6)
+            ]
         )
     ]
 )

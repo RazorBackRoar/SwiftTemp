@@ -1,9 +1,16 @@
-## Description
-<!-- Provide a brief description of the changes introduced by this PR. -->
+## Summary
+<!-- What does this change and why? -->
 
-## Changes Made
-- 
+## Changed files
+<!-- Key files touched and a one-line reason each. -->
 
-## Verification
-- [ ] `swift test` passed cleanly
-- [ ] Verified on macOS 14+
+## Testing performed
+- [ ] `swift build`
+- [ ] `swift test`
+- [ ] Manual run on macOS / Apple Silicon
+
+## Safety notes
+<!-- Core/backend behavior preserved? Anything irreversible? -->
+
+## Screenshots
+<!-- Required if the UI changed. -->

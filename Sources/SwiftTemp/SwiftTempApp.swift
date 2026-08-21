@@ -24,6 +24,8 @@ struct SwiftTempApp: App {
             MemoryBreakdownView()
         }
         .defaultSize(width: 480, height: 420)
+        .defaultPosition(.center)
+        .windowResizability(.contentMinSize)
 
         Settings {
             SettingsView(settings: settings, monitor: monitor)

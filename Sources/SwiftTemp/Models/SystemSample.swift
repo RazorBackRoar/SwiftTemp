@@ -6,6 +6,7 @@ struct SystemSample: Identifiable, Sendable {
     let timestamp: Date
     let thermalState: ProcessInfo.ThermalState
     let cpuUsage: Double
+    let gpuUsage: Double?
     let memoryUsedGB: Double
     let temperatureCelsius: Double?
 }

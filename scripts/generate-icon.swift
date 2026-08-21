@@ -9,74 +9,52 @@ let legacyIcon = root.appendingPathComponent("Resources/AppIcon.icns")
 let canvas: CGFloat = 1024
 let body = NSRect(x: 100, y: 100, width: 824, height: 824)
 
-func roundedPath(_ rect: NSRect, radius: CGFloat) -> NSBezierPath {
-    NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius)
-}
-
 func makeMaster() -> NSImage {
     let image = NSImage(size: NSSize(width: canvas, height: canvas))
     image.lockFocus()
     NSGraphicsContext.current?.imageInterpolation = .high
 
     let shadow = NSShadow()
-    shadow.shadowColor = NSColor.black.withAlphaComponent(0.35)
-    shadow.shadowBlurRadius = 24
-    shadow.shadowOffset = NSSize(width: 0, height: -14)
+    shadow.shadowColor = NSColor.black.withAlphaComponent(0.30)
+    shadow.shadowBlurRadius = 20
+    shadow.shadowOffset = NSSize(width: 0, height: -10)
     shadow.set()
 
-    let shell = roundedPath(body, radius: 190)
-    let shellGradient = NSGradient(colorsAndLocations:
-        (NSColor(calibratedRed: 0.02, green: 0.18, blue: 0.42, alpha: 1), 0.0),
-        (NSColor(calibratedRed: 0.03, green: 0.48, blue: 0.91, alpha: 1), 0.48),
-        (NSColor(calibratedRed: 1.00, green: 0.38, blue: 0.04, alpha: 1), 1.0)
+    let shell = NSBezierPath(roundedRect: body, xRadius: 188, yRadius: 188)
+    let background = NSGradient(colorsAndLocations:
+        (NSColor(calibratedRed: 0.02, green: 0.22, blue: 0.52, alpha: 1), 0.0),
+        (NSColor(calibratedRed: 0.98, green: 0.35, blue: 0.03, alpha: 1), 1.0)
     )!
-    shellGradient.draw(in: shell, angle: -42)
+    background.draw(in: shell, angle: 90)
 
-    NSGraphicsContext.saveGraphicsState()
-    shell.addClip()
-    let glow = NSGradient(colors: [
-        NSColor.white.withAlphaComponent(0.30),
-        NSColor.white.withAlphaComponent(0.0)
-    ])!
-    glow.draw(fromCenter: NSPoint(x: 310, y: 770), radius: 0,
-              toCenter: NSPoint(x: 310, y: 770), radius: 470,
-              options: [.drawsAfterEndingLocation])
-    NSGraphicsContext.restoreGraphicsState()
-
-    NSColor.white.withAlphaComponent(0.22).setStroke()
-    shell.lineWidth = 7
+    NSColor.white.withAlphaComponent(0.14).setStroke()
+    shell.lineWidth = 4
     shell.stroke()
 
     NSGraphicsContext.saveGraphicsState()
     let glyphShadow = NSShadow()
-    glyphShadow.shadowColor = NSColor.black.withAlphaComponent(0.28)
-    glyphShadow.shadowBlurRadius = 15
-    glyphShadow.shadowOffset = NSSize(width: 0, height: -7)
+    glyphShadow.shadowColor = NSColor.black.withAlphaComponent(0.18)
+    glyphShadow.shadowBlurRadius = 8
+    glyphShadow.shadowOffset = NSSize(width: 0, height: -4)
     glyphShadow.set()
 
-    let stem = roundedPath(NSRect(x: 421, y: 320, width: 182, height: 430), radius: 91)
+    let stem = NSBezierPath(roundedRect: NSRect(x: 430, y: 350, width: 164, height: 390), xRadius: 82, yRadius: 82)
+    let bulb = NSBezierPath(ovalIn: NSRect(x: 344, y: 218, width: 336, height: 336))
     NSColor.white.setFill()
     stem.fill()
-
-    let bulb = NSBezierPath(ovalIn: NSRect(x: 352, y: 214, width: 320, height: 320))
-    NSColor.white.setFill()
     bulb.fill()
     NSGraphicsContext.restoreGraphicsState()
 
-    let innerStem = roundedPath(NSRect(x: 477, y: 365, width: 70, height: 330), radius: 35)
-    let orange = NSColor(calibratedRed: 1.0, green: 0.34, blue: 0.03, alpha: 1)
-    orange.setFill()
-    innerStem.fill()
+    let fluidStem = NSBezierPath(roundedRect: NSRect(x: 478, y: 397, width: 68, height: 277), xRadius: 34, yRadius: 34)
+    let fluidBulb = NSBezierPath(ovalIn: NSRect(x: 407, y: 281, width: 196, height: 196))
+    let redOrange = NSColor(calibratedRed: 1.0, green: 0.22, blue: 0.03, alpha: 1)
+    redOrange.setFill()
+    fluidStem.fill()
+    fluidBulb.fill()
 
-    let innerBulb = NSBezierPath(ovalIn: NSRect(x: 414, y: 276, width: 196, height: 196))
-    orange.setFill()
-    innerBulb.fill()
-
-    for y in [650, 585, 520] as [CGFloat] {
-        let tick = roundedPath(NSRect(x: 623, y: y, width: 112, height: 22), radius: 11)
-        NSColor.white.withAlphaComponent(0.92).setFill()
-        tick.fill()
-    }
+    let highlight = NSBezierPath(roundedRect: NSRect(x: 496, y: 421, width: 16, height: 180), xRadius: 8, yRadius: 8)
+    NSColor.white.withAlphaComponent(0.22).setFill()
+    highlight.fill()
 
     image.unlockFocus()
     return image

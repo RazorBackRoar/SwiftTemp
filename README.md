@@ -1,9 +1,10 @@
 # SwiftTemp
 
+[![Download](https://img.shields.io/github/v/release/RazorBackRoar/SwiftTemp?style=for-the-badge&label=Download%20DMG&color=d32f2f)](https://github.com/RazorBackRoar/SwiftTemp/releases/latest)
 [![Version](https://img.shields.io/badge/version-1.0.0-c4711a?style=for-the-badge)](https://github.com/RazorBackRoar/SwiftTemp/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/RazorBackRoar/SwiftTemp/ci.yml?branch=main&style=for-the-badge&label=CI)](https://github.com/RazorBackRoar/SwiftTemp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blueviolet?style=for-the-badge)](LICENSE)
-[![Swift](https://img.shields.io/badge/Swift-5.10-f05138?style=for-the-badge&logo=swift&logoColor=white)](https://swift.org)
+[![Swift](https://img.shields.io/badge/Swift-F05138?style=for-the-badge&logo=swift&logoColor=white)](https://swift.org/)
 [![macOS](https://img.shields.io/badge/mac%20os-Apple%20Silicon-d32f2f?style=for-the-badge&logo=apple&logoColor=white)](https://support.apple.com/en-us/HT211814)
 
 A lightweight native macOS menu bar utility for Apple Silicon Macs. It shows Apple’s supported system thermal state alongside CPU usage, memory usage, fan speed when available, and an experimental chip-temperature reading.
@@ -47,6 +48,7 @@ The latest release is available on the [Releases page](https://github.com/RazorB
     green → yellow → red → purple
   - Experimental hottest compute-sensor temperature (°F by default, °C optional) when a plausible private SMC key is available — “Unavailable” otherwise
   - CPU usage %
+  - GPU usage % when the Apple GPU reports utilization through IORegistry
   - Memory used / total (GB), with a link to the full process breakdown
   - Last-updated timestamp
   - Current monitoring status, with a **Pause/Resume Monitoring** control
@@ -93,7 +95,7 @@ user can inspect, sorted largest-first, via the macOS `libproc` interfaces (`pro
 
 ## What's not included, and why
 
-SwiftTemp does not report GPU utilization or power draw because there is no stable public macOS API for those system-wide values. Fan RPM is shown only when the same private SMC path reports a plausible fan count and speed. Graph zoom/pan is intentionally omitted to keep the compact popover predictable and inexpensive.
+GPU utilization is read through the private `AGXAccelerator` IORegistry interface when available; it may report "Not Available" on some configurations because there is no stable public macOS API for system-wide GPU usage. Fan RPM is shown only when the same private SMC path reports a plausible fan count and speed. Graph zoom/pan is intentionally omitted to keep the compact popover predictable and inexpensive.
 
 ---
 
@@ -102,7 +104,7 @@ SwiftTemp does not report GPU utilization or power draw because there is no stab
 - **macOS 14 (Sonoma) or later** — `Observation` (`@Observable`),
   `MenuBarExtra`, `@Bindable`, and `Settings { }`'s modern APIs all need
   this baseline.
-- **Xcode 15.3+ / Swift 5.10+ toolchain.**
+- **Xcode 16+ / Swift 6 toolchain.**
 - **Apple Silicon Mac** (arm64). Untested on Intel.
 
 ```bash
@@ -160,7 +162,7 @@ SwiftTemp/
 ```
 
 Plain **Swift Package Manager (SPM)** project — no `.xcodeproj`, matching
-how Libra/Looper/MetaBurn/SwiftShot are set up in your `RazorBackRoar`
+how Libra/Looper/MetaBurn/Swifter are set up in your `RazorBackRoar`
 monorepo. Xcode opens `Package.swift` directly. Drops into
 `~/Workspace/Apps/SwiftTemp` if you want it alongside your other
 Swift apps.
@@ -265,7 +267,7 @@ it's actually running from `/Applications`.
   3. Rename `SwiftTempApp.swift` and `struct SwiftTempApp`.
   4. Update `APP_NAME`/`BUNDLE_ID` in `scripts/build-mac.sh`.
   5. Update the subsystem string in `Logging/AppLogger.swift`.
-- **App icon** — `Resources/AppIcon.icns` at the project root; picked up
+- **App icon** — `Sources/SwiftTemp/Resources/AppIcon.icns`; picked up
   automatically by `scripts/build-mac.sh`.
 
 ---

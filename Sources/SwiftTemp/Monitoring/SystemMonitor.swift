@@ -5,6 +5,7 @@ import Observation
 
 private struct MonitoringSnapshot: Sendable {
     let cpuUsage: Double
+    let gpuUsage: Double?
     let memory: MemorySnapshot
     let sensors: SensorSnapshot
     let topCPUProcesses: [ProcessCPUInfo]
@@ -16,14 +17,16 @@ private actor SystemSampler {
     private let processScanner = ProcessCPUScanner()
 
     func sample(includeTopProcesses: Bool) async -> MonitoringSnapshot {
+        async let gpuUsage = GPUUsage.current()
+        async let sensors = sensorReader.currentSnapshot()
         let cpuUsage = CPUUsage.currentTotalUsage(previous: &previousCPUTicks)
         let memory = MemoryUsage.current()
-        let sensors = await sensorReader.currentSnapshot()
         let topCPUProcesses = includeTopProcesses ? processScanner.topProcesses(limit: 3) : []
         return MonitoringSnapshot(
             cpuUsage: cpuUsage,
+            gpuUsage: await gpuUsage,
             memory: memory,
-            sensors: sensors,
+            sensors: await sensors,
             topCPUProcesses: topCPUProcesses
         )
     }
@@ -39,6 +42,7 @@ private actor SystemSampler {
 final class SystemMonitor {
     private(set) var thermalState: ProcessInfo.ThermalState = ProcessInfo.processInfo.thermalState
     private(set) var cpuUsage: Double = 0
+    private(set) var gpuUsage: Double?
     private(set) var memoryUsedGB: Double = 0
     private(set) var memoryTotalGB: Double = Double(ProcessInfo.processInfo.physicalMemory) / 1_073_741_824
     private(set) var lastUpdated: Date = Date()
@@ -55,6 +59,7 @@ final class SystemMonitor {
     private var timer: Timer?
     private var refreshTask: Task<Void, Never>?
     private var refreshGeneration = 0
+    private var pendingRefresh = false
     private var thermalObserver: NSObjectProtocol?
     private var sleepObserver: NSObjectProtocol?
     private var wakeObserver: NSObjectProtocol?
@@ -106,7 +111,11 @@ final class SystemMonitor {
     }
 
     func refresh() {
-        guard isMonitoring, !isSleeping, refreshTask == nil else { return }
+        guard isMonitoring, !isSleeping else { return }
+        guard refreshTask == nil else {
+            pendingRefresh = true
+            return
+        }
 
         let includeTopProcesses = topProcessesVisible && settings.showTopCPUApps
         let generation = refreshGeneration
@@ -115,12 +124,17 @@ final class SystemMonitor {
             guard !Task.isCancelled, let self, self.refreshGeneration == generation else { return }
             self.refreshTask = nil
             self.apply(snapshot)
+            if self.pendingRefresh {
+                self.pendingRefresh = false
+                self.refresh()
+            }
         }
     }
 
     private func apply(_ snapshot: MonitoringSnapshot) {
-        thermalState = ProcessInfo.processInfo.thermalState
+        updateThermalState(ProcessInfo.processInfo.thermalState)
         cpuUsage = snapshot.cpuUsage
+        gpuUsage = snapshot.gpuUsage
         memoryUsedGB = snapshot.memory.usedGB
         memoryTotalGB = snapshot.memory.totalGB
         temperatureCelsius = snapshot.sensors.temperatureCelsius
@@ -151,6 +165,7 @@ final class SystemMonitor {
                 timestamp: timestamp,
                 thermalState: thermalState,
                 cpuUsage: cpuUsage,
+                gpuUsage: gpuUsage,
                 memoryUsedGB: memoryUsedGB,
                 temperatureCelsius: temperatureCelsius
             )
@@ -170,15 +185,7 @@ final class SystemMonitor {
         ) { [weak self] _ in
             Task { @MainActor in
                 guard let self, self.isMonitoring else { return }
-                let oldState = self.thermalState
-                let newState = ProcessInfo.processInfo.thermalState
-                self.thermalState = newState
-                AppLogger.thermal.notice("Thermal state changed to \(newState.label, privacy: .public)")
-                ThermalNotifier.notifyStateChange(
-                    from: oldState,
-                    to: newState,
-                    threshold: self.settings.notificationThreshold
-                )
+                self.updateThermalState(ProcessInfo.processInfo.thermalState)
             }
         }
 
@@ -221,8 +228,21 @@ final class SystemMonitor {
         }
     }
 
+    private func updateThermalState(_ newState: ProcessInfo.ThermalState) {
+        let oldState = thermalState
+        guard oldState != newState else { return }
+        thermalState = newState
+        AppLogger.thermal.notice("Thermal state changed to \(newState.label, privacy: .public)")
+        ThermalNotifier.notifyStateChange(
+            from: oldState,
+            to: newState,
+            threshold: settings.notificationThreshold
+        )
+    }
+
     private func cancelPendingRefresh() {
         refreshGeneration += 1
+        pendingRefresh = false
         refreshTask?.cancel()
         refreshTask = nil
     }

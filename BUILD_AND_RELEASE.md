@@ -5,7 +5,7 @@ Organization-standard build and release guide for
 
 ## Overview
 
-SwiftTemp is a native macOS menu bar thermal monitor built with **Swift** and **SwiftUI**.
+SwiftTemp is a native macOS menu bar thermal monitor built with **Swift 6** and **SwiftUI**.
 
 ## Development
 
@@ -23,7 +23,7 @@ swift run
 
 ## Release Process
 
-1. Ensure `main` is green (CI `swift build`).
+1. Ensure `main` is green (CI `swift build` and `swift test`).
 2. Confirm the version in `Sources/SwiftTemp/Resources/version.json`.
 3. Run `./scripts/build-mac.sh`.
 4. Smoke-test the packaged `.app` from the DMG.
