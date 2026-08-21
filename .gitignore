@@ -1,0 +1,10 @@
+.DS_Store
+.build/
+build/
+dist/
+DerivedData/
+*.xcodeproj
+*.xcworkspace
+*.dmg
+*.app
+*.log
