@@ -38,7 +38,17 @@ Package a macOS `.app` and DMG with ad-hoc signing:
 ./scripts/build-mac.sh
 ```
 
-Local output: `~/Desktop/SwiftTemp.dmg` only. CI keeps `build/Release/SwiftTemp.dmg`.
+Local output: `build/Release/SwiftTemp.dmg`.
+
+## Learned User Preferences
+
+- CPU and GPU rows must open process-breakdown windows the same way Memory does — click to see which processes are using them.
+- Menu bar popover and Settings chrome must stay high-contrast and fully visible; do not truncate the Settings label.
+
+## Learned Workspace Facts
+
+- SwiftTemp is a RazorBackRoar product app at v1.0.0 (`Sources/SwiftTemp/Resources/version.json`); native Swift 6 menu bar thermal monitor for Apple Silicon.
+- After a new install, quit the previous menu bar extra or the old UI stays on screen.
 
 ## Repository rules
 
