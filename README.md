@@ -1,7 +1,6 @@
 # SwiftTemp
 
-[![Download](https://img.shields.io/github/v/release/RazorBackRoar/SwiftTemp?style=for-the-badge&label=Download%20DMG&color=d32f2f)](https://github.com/RazorBackRoar/SwiftTemp/releases/latest/download/SwiftTemp.dmg)
-[![Version](https://img.shields.io/badge/version-1.0.0-c4711a?style=for-the-badge)](https://github.com/RazorBackRoar/SwiftTemp/releases/tag/v1.0.0)
+[![Version](https://img.shields.io/badge/version-1.0.0-c4711a?style=for-the-badge)](https://github.com/RazorBackRoar/SwiftTemp/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/RazorBackRoar/SwiftTemp/ci.yml?branch=main&style=for-the-badge&label=CI)](https://github.com/RazorBackRoar/SwiftTemp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blueviolet?style=for-the-badge)](LICENSE)
 [![Swift](https://img.shields.io/badge/Swift-5.10-f05138?style=for-the-badge&logo=swift&logoColor=white)](https://swift.org)
