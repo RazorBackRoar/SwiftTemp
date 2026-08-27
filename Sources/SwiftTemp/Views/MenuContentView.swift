@@ -5,7 +5,6 @@ struct MenuContentView: View {
     var monitor: SystemMonitor
     var settings: AppSettings
 
-    @Environment(\.openSettings) private var openSettings
     @Environment(\.openWindow) private var openWindow
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showTopCPU: Bool = false
@@ -24,7 +23,7 @@ struct MenuContentView: View {
             // MARK: - Thermal & Sensors Card
             VStack(spacing: 8) {
                 HStack {
-                    metricIcon(monitor.thermalState.symbolName, color: .green)
+                    metricIcon(monitor.thermalState.symbolName, color: monitor.thermalState.tint)
                         .accessibilityHidden(true)
 
                     Text("Thermal State")
@@ -35,12 +34,12 @@ struct MenuContentView: View {
 
                     Text(monitor.thermalState.label)
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.green)
+                        .foregroundStyle(monitor.thermalState.tint)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
                         .background(
                             Capsule()
-                                .fill(Color.green.opacity(0.14))
+                                .fill(monitor.thermalState.tint.opacity(0.14))
                         )
                 }
 
@@ -318,10 +317,7 @@ struct MenuContentView: View {
 
                 Spacer(minLength: 8)
 
-                Button {
-                    NSApp.activate(ignoringOtherApps: true)
-                    openSettings()
-                } label: {
+                SettingsLink {
                     HStack(spacing: 4) {
                         Image(systemName: "gearshape")
                             .font(.system(size: 10, weight: .semibold))
@@ -331,6 +327,9 @@ struct MenuContentView: View {
                 }
                 .buttonStyle(MenuActionButtonStyle())
                 .keyboardShortcut(",", modifiers: .command)
+                .simultaneousGesture(TapGesture().onEnded {
+                    NSApp.activate(ignoringOtherApps: true)
+                })
 
                 Button {
                     NSApplication.shared.terminate(nil)

@@ -16,7 +16,7 @@ A lightweight native macOS menu bar utility for Apple Silicon Macs. It shows App
 
 Most features use public macOS APIs (`ProcessInfo.thermalState`, Mach host statistics, Swift Charts, `UserNotifications`, and `ServiceManagement`). Degree and fan readings are different: macOS exposes no supported public API for them, so SwiftTemp uses the private, undocumented AppleSMC interface and clearly treats those values as experimental.
 
-The app is built and packaged for arm64 on macOS 14 or later. Private sensor availability and key meanings vary by Mac model and macOS release; unsupported readings fail closed as “Unavailable” rather than being estimated from unrelated sensors.
+The app is built and packaged for arm64 on macOS 15 or later. Private sensor availability and key meanings vary by Mac model and macOS release; unsupported readings fail closed as “Unavailable” rather than being estimated from unrelated sensors.
 
 ---
 
@@ -106,9 +106,10 @@ GPU utilization is read through the private `AGXAccelerator` IORegistry interfac
 
 ## Requirements
 
-- **macOS 14 (Sonoma) or later** — `Observation` (`@Observable`),
-  `MenuBarExtra`, `@Bindable`, and `Settings { }`'s modern APIs all need
-  this baseline.
+- **macOS 15 (Sequoia) or later** — `Observation` (`@Observable`),
+  `MenuBarExtra`, `@Bindable`, and `Settings { }`'s modern APIs only need
+  macOS 14, but the auxiliary breakdown windows require macOS 15's
+  `Scene.defaultLaunchBehavior(_:)` to suppress window-state restoration.
 - **Xcode 16+ / Swift 6 toolchain.**
 - **Apple Silicon Mac** (arm64). Untested on Intel.
 
@@ -294,9 +295,9 @@ crowded.
 setting; confirm you're running the actual built `.app`, not a stray old
 binary.
 
-**Settings window won't open** — `openSettings()` (via
-`@Environment(\.openSettings)`) requires macOS 14+; confirm your deployment
-target/SDK actually matches `platforms: [.macOS(.v14)]` in `Package.swift`.
+**Settings window won't open** — the Settings button uses `SettingsLink`,
+which requires macOS 14+; confirm your deployment target/SDK actually
+matches `platforms: [.macOS(.v15)]` in `Package.swift`.
 
 **Notifications never appear** — run the built `.app`, enable at least one alert in Settings, and confirm macOS granted notification permission under System Settings → Notifications → SwiftTemp.
 
@@ -308,7 +309,7 @@ for `Launch-at-login change failed` log entries.
 **Graph says “Waiting for sensor data”** — the chart needs at least two valid private compute-sensor samples. CPU, memory, fan, and Apple Thermal State monitoring continue even when degree data is unavailable.
 
 **Build error about `@Observable`/`Observation`/`@Bindable`** — toolchain
-older than Swift 5.9 or SDK older than macOS 14. Update Xcode.
+older than Swift 5.9 or SDK older than macOS 15. Update Xcode.
 
 **Build error in `CPUUsage.swift`/`MemoryUsage.swift`** (Mach types) — API
 names are correct as of current SDKs; if something doesn't resolve, check
@@ -328,7 +329,7 @@ resolves at all on your SDK; these are real, public IOKit functions (only
 the SMC-specific selectors/struct-layout built on top are private), so a
 missing-symbol error here would be unusual and worth flagging directly.
 
-**Memory Breakdown window doesn't open** — same `openWindow`/macOS 14+
+**Memory Breakdown window doesn't open** — same `openWindow`/macOS 15+
 requirement as Settings above; also confirm `Window("Memory Breakdown",
 id: "memoryBreakdown")` in `SwiftTempApp.swift` wasn't accidentally
 dropped.

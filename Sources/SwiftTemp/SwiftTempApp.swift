@@ -26,6 +26,7 @@ struct SwiftTempApp: App {
         .defaultSize(width: 480, height: 420)
         .defaultPosition(.center)
         .windowResizability(.contentMinSize)
+        .defaultLaunchBehavior(.suppressed)
 
         Window("CPU Breakdown", id: "cpuBreakdown") {
             ProcessBreakdownView(
@@ -39,6 +40,7 @@ struct SwiftTempApp: App {
         .defaultSize(width: 480, height: 420)
         .defaultPosition(.center)
         .windowResizability(.contentMinSize)
+        .defaultLaunchBehavior(.suppressed)
 
         Window("GPU Breakdown", id: "gpuBreakdown") {
             ProcessBreakdownView(
@@ -52,6 +54,7 @@ struct SwiftTempApp: App {
         .defaultSize(width: 480, height: 420)
         .defaultPosition(.center)
         .windowResizability(.contentMinSize)
+        .defaultLaunchBehavior(.suppressed)
 
         Settings {
             SettingsView(settings: settings, monitor: monitor)
