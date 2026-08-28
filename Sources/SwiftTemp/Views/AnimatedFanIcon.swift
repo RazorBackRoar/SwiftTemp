@@ -24,8 +24,7 @@ struct AnimatedFanIcon: View {
     }
 
     private var frameInterval: TimeInterval {
-        guard let rpm, rpm > 0 else { return 1.0 / 12.0 }
-        return rpm >= 3_000 ? 1.0 / 30.0 : 1.0 / 24.0
+        1.0 / 12.0
     }
 
     private func rotation(at date: Date) -> Double {

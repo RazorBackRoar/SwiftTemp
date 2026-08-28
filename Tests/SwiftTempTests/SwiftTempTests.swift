@@ -1,4 +1,5 @@
 import XCTest
+
 @testable import SwiftTemp
 
 final class SwiftTempTests: XCTestCase {
@@ -14,12 +15,14 @@ final class SwiftTempTests: XCTestCase {
     }
 
     func testTemperatureTintProgression() {
-        XCTAssertEqual(Temperature.tint(celsius: 64.9), .yellow)
-        XCTAssertEqual(Temperature.tint(celsius: 65), .orange)
-        XCTAssertEqual(Temperature.tint(celsius: 84.9), .orange)
-        XCTAssertEqual(Temperature.tint(celsius: 85), .red)
-        XCTAssertEqual(Temperature.tint(celsius: 99.9), .red)
-        XCTAssertEqual(Temperature.tint(celsius: 100), .purple)
+        XCTAssertEqual(Temperature.tint(celsius: 49.9), .blue)
+        XCTAssertEqual(Temperature.tint(celsius: 50), .green)
+        XCTAssertEqual(Temperature.tint(celsius: 74.9), .green)
+        XCTAssertEqual(Temperature.tint(celsius: 75), .yellow)
+        XCTAssertEqual(Temperature.tint(celsius: 94.9), .yellow)
+        XCTAssertEqual(Temperature.tint(celsius: 95), .orange)
+        XCTAssertEqual(Temperature.tint(celsius: 104.9), .orange)
+        XCTAssertEqual(Temperature.tint(celsius: 105), .red)
         XCTAssertEqual(Temperature.tint(celsius: nil), .secondary)
     }
 
@@ -57,10 +60,11 @@ final class SwiftTempTests: XCTestCase {
             UInt8(floatBits & 0xFF),
             UInt8((floatBits >> 8) & 0xFF),
             UInt8((floatBits >> 16) & 0xFF),
-            UInt8((floatBits >> 24) & 0xFF)
+            UInt8((floatBits >> 24) & 0xFF),
         ]
         let floatValue = SMCConnection.decodeTemperature(bytes: littleEndianBytes, dataType: "flt ")
-        let fixedPointValue = SMCConnection.decodeTemperature(bytes: [0x2A, 0x80], dataType: "sp78")
+        let fixedPointValue = SMCConnection.decodeTemperature(
+            bytes: [0x2A, 0x80], dataType: "sp78")
         XCTAssertNotNil(floatValue)
         XCTAssertNotNil(fixedPointValue)
         XCTAssertEqual(floatValue!, 42.5, accuracy: 0.001)
@@ -75,7 +79,7 @@ final class SwiftTempTests: XCTestCase {
             (key: "TB0T", celsius: 40.0),
             (key: "Tp01", celsius: 72.0),
             (key: "Te05", celsius: 68.0),
-            (key: "Tg0D", celsius: 75.0)
+            (key: "Tg0D", celsius: 75.0),
         ]
         let selected = SMCTemperatureReader.representativeTemperature(from: readings)
         XCTAssertEqual(selected?.key, "Tg0D")
@@ -130,23 +134,23 @@ final class SwiftTempTests: XCTestCase {
 
     func testGPUUsageParsesDeviceUtilization() {
         let sample = """
-        "PerformanceStatistics" = {"Device Utilization %" = 37}
-        """
+            "PerformanceStatistics" = {"Device Utilization %" = 37}
+            """
         XCTAssertEqual(GPUUsage.parsePerformanceStatistics(sample), 37)
         XCTAssertNil(GPUUsage.parsePerformanceStatistics("no stats here"))
         let activeSample = """
-        "PerformanceStatistics" = {"Device Active" = 0.5}
-        """
+            "PerformanceStatistics" = {"Device Active" = 0.5}
+            """
         XCTAssertEqual(GPUUsage.parsePerformanceStatistics(activeSample), 50)
 
         let compactIoreg = """
-        "PerformanceStatistics" = {"In use system memory (driver)"=0,"Tiler Utilization %"=16,"Renderer Utilization %"=23,"Device Utilization %"=23}
-        """
+            "PerformanceStatistics" = {"In use system memory (driver)"=0,"Tiler Utilization %"=16,"Renderer Utilization %"=23,"Device Utilization %"=23}
+            """
         XCTAssertEqual(GPUUsage.parsePerformanceStatistics(compactIoreg), 23)
     }
 
     func testGPUUsageReadsThisMacWhenAvailable() async {
-        let value = await GPUUsage.current()
+        let value = await GPUUsage().current()
         XCTAssertNotNil(value, "IOAccelerator PerformanceStatistics should be readable on this Mac")
         if let value {
             XCTAssertGreaterThanOrEqual(value, 0)
@@ -162,7 +166,7 @@ final class SwiftTempTests: XCTestCase {
 
         let usage: [[String: Any]] = [
             ["API": "Metal", "accumulatedGPUTime": 1_000_000],
-            ["API": "Metal", "accumulatedGPUTime": 2_500_000]
+            ["API": "Metal", "accumulatedGPUTime": 2_500_000],
         ]
         XCTAssertEqual(ProcessGPUScanner.accumulatedGPUTime(fromAppUsage: usage), 3_500_000)
         XCTAssertEqual(ProcessGPUScanner.accumulatedGPUTime(fromAppUsage: []), 0)
@@ -174,11 +178,12 @@ final class SwiftTempTests: XCTestCase {
         XCTAssertTrue(totals.values.contains { $0.nanoseconds > 0 })
     }
 
-    func testCPURankedSnapshotReturnsFinitePercents() {
-        let rows = ProcessCPUScanner.rankedSnapshot(limit: 8, sampleSeconds: 0.6)
+    func testCPURankedSnapshotReturnsFinitePercents() async {
+        let rows = await ProcessCPUScanner.rankedSnapshot(limit: 8, sampleSeconds: 0.6)
         for row in rows {
             XCTAssertGreaterThan(row.cpuPercent, 0)
-            XCTAssertLessThanOrEqual(row.cpuPercent, Double(ProcessInfo.processInfo.activeProcessorCount) * 100)
+            XCTAssertLessThanOrEqual(
+                row.cpuPercent, Double(ProcessInfo.processInfo.activeProcessorCount) * 100)
             XCTAssertFalse(row.name.isEmpty)
         }
     }

@@ -155,10 +155,12 @@ struct ProcessBreakdownView: View {
 
     private func confirmTermination() {
         guard let target = pendingTermination else { return }
-        let succeeded = ProcessTerminator.terminate(pid: target.pid, name: target.name, force: forceQuitPending)
+        let succeeded = ProcessTerminator.terminate(
+            pid: target.pid, name: target.name, force: forceQuitPending)
         pendingTermination = nil
         if !succeeded {
-            errorMessage = "\(target.name) could not be quit. It may have exited, changed identity, or require different permissions."
+            errorMessage =
+                "\(target.name) could not be quit. It may have exited, changed identity, or require different permissions."
         }
         Task {
             try? await Task.sleep(for: .milliseconds(500))
@@ -174,7 +176,9 @@ struct ProcessBreakdownView: View {
     }
 
     private func isLikelyAIWorkload(_ name: String) -> Bool {
-        let needles = ["ollama", "lm studio", "lmstudio", "llama", "gpt4all", "text-generation", "koboldcpp"]
+        let needles = [
+            "ollama", "lm studio", "lmstudio", "llama", "gpt4all", "text-generation", "koboldcpp",
+        ]
         let lowered = name.lowercased()
         return needles.contains { lowered.contains($0) }
     }
@@ -195,7 +199,7 @@ enum ProcessBreakdownLoaders {
 
     static func cpu() async -> [ProcessUsageRow] {
         await Task.detached(priority: .userInitiated) {
-            ProcessCPUScanner.rankedSnapshot().map { process in
+            await ProcessCPUScanner.rankedSnapshot().map { process in
                 ProcessUsageRow(
                     pid: process.pid,
                     name: process.name,
@@ -207,7 +211,7 @@ enum ProcessBreakdownLoaders {
 
     static func gpu() async -> [ProcessUsageRow] {
         await Task.detached(priority: .userInitiated) {
-            ProcessGPUScanner.rankedSnapshot().map { process in
+            await ProcessGPUScanner.rankedSnapshot().map { process in
                 ProcessUsageRow(
                     pid: process.pid,
                     name: process.name,

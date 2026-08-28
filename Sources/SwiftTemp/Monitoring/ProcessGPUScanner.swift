@@ -17,9 +17,11 @@ enum ProcessGPUScanner {
         var nanoseconds: UInt64
     }
 
-    static func rankedSnapshot(limit: Int = 15, sampleSeconds: Double = 0.6) -> [ProcessGPUInfo] {
+    static func rankedSnapshot(limit: Int = 15, sampleSeconds: Double = 0.6) async
+        -> [ProcessGPUInfo]
+    {
         let first = accumulatedTimesByPID()
-        Thread.sleep(forTimeInterval: max(0.4, sampleSeconds))
+        try? await Task.sleep(for: .seconds(max(0.4, sampleSeconds)))
         let second = accumulatedTimesByPID()
         let elapsed = max(0.4, sampleSeconds)
         let pids = Set(first.keys).union(second.keys)
@@ -37,7 +39,8 @@ enum ProcessGPUScanner {
             }()
             let percent = Double(delta) / (elapsed * 1_000_000_000) * 100
             if percent < 0.05 && total == 0 { continue }
-            let name = processName(for: pid)
+            let name =
+                processName(for: pid)
                 ?? after?.name
                 ?? before?.name
                 ?? "PID \(pid)"
@@ -85,7 +88,7 @@ enum ProcessGPUScanner {
         var totals: [pid_t: Accumulated] = [:]
         forEachUserClient { properties in
             guard let creator = properties["IOUserClientCreator"] as? String,
-                  let parsed = parseCreator(creator)
+                let parsed = parseCreator(creator)
             else { return }
             let extra = accumulatedGPUTime(fromAppUsage: properties["AppUsage"])
             var current = totals[parsed.pid] ?? Accumulated(name: parsed.name, nanoseconds: 0)
@@ -107,7 +110,10 @@ enum ProcessGPUScanner {
     private static func forEachUserClient(_ body: (NSDictionary) -> Void) {
         guard let matching = IOServiceMatching("IOAccelerator") else { return }
         var acceleratorIterator: io_iterator_t = 0
-        guard IOServiceGetMatchingServices(kIOMainPortDefault, matching, &acceleratorIterator) == KERN_SUCCESS else {
+        guard
+            IOServiceGetMatchingServices(kIOMainPortDefault, matching, &acceleratorIterator)
+                == KERN_SUCCESS
+        else {
             return
         }
         defer { IOObjectRelease(acceleratorIterator) }
@@ -119,7 +125,10 @@ enum ProcessGPUScanner {
             defer { IOObjectRelease(currentAccelerator) }
 
             var childIterator: io_iterator_t = 0
-            guard IORegistryEntryGetChildIterator(currentAccelerator, kIOServicePlane, &childIterator) == KERN_SUCCESS else {
+            guard
+                IORegistryEntryGetChildIterator(currentAccelerator, kIOServicePlane, &childIterator)
+                    == KERN_SUCCESS
+            else {
                 continue
             }
             defer { IOObjectRelease(childIterator) }
@@ -131,9 +140,11 @@ enum ProcessGPUScanner {
                 defer { IOObjectRelease(current) }
 
                 var propertiesRef: Unmanaged<CFMutableDictionary>?
-                guard IORegistryEntryCreateCFProperties(current, &propertiesRef, kCFAllocatorDefault, 0) == KERN_SUCCESS,
-                      let properties = propertiesRef?.takeRetainedValue() as NSDictionary?,
-                      properties["IOUserClientCreator"] != nil
+                guard
+                    IORegistryEntryCreateCFProperties(
+                        current, &propertiesRef, kCFAllocatorDefault, 0) == KERN_SUCCESS,
+                    let properties = propertiesRef?.takeRetainedValue() as NSDictionary?,
+                    properties["IOUserClientCreator"] != nil
                 else {
                     continue
                 }
@@ -146,6 +157,7 @@ enum ProcessGPUScanner {
         var buffer = [CChar](repeating: 0, count: Int(MAXPATHLEN))
         let length = proc_name(pid, &buffer, UInt32(buffer.count))
         guard length > 0 else { return nil }
-        return String(decoding: buffer.prefix(Int(length)).map { UInt8(bitPattern: $0) }, as: UTF8.self)
+        return String(
+            decoding: buffer.prefix(Int(length)).map { UInt8(bitPattern: $0) }, as: UTF8.self)
     }
 }

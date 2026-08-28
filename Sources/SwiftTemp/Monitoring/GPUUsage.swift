@@ -1,17 +1,41 @@
 import Foundation
 import IOKit
 
-enum GPUUsage {
-    static func current() async -> Double? {
-        await Task.detached(priority: .utility) {
-            fromRegistry() ?? parsePerformanceStatistics(runIOReg() ?? "")
+actor GPUUsage {
+    private let fallbackInterval: TimeInterval = 10
+    private var registryAvailable: Bool?
+    private var lastFallbackRead = Date.distantPast
+    private var fallbackValue: Double?
+
+    func current() async -> Double? {
+        if registryAvailable != false {
+            let value = await Task.detached(priority: .utility) {
+                Self.fromRegistry()
+            }.value
+            if let value {
+                registryAvailable = true
+                return value
+            }
+            registryAvailable = false
+        }
+
+        let now = Date()
+        guard now.timeIntervalSince(lastFallbackRead) >= fallbackInterval else {
+            return fallbackValue
+        }
+        lastFallbackRead = now
+        let value = await Task.detached(priority: .utility) {
+            Self.parsePerformanceStatistics(Self.runIOReg() ?? "")
         }.value
+        fallbackValue = value
+        return value
     }
 
     private static func fromRegistry() -> Double? {
         guard let matching = IOServiceMatching("IOAccelerator") else { return nil }
         var iterator: io_iterator_t = 0
-        guard IOServiceGetMatchingServices(kIOMainPortDefault, matching, &iterator) == KERN_SUCCESS else {
+        guard IOServiceGetMatchingServices(kIOMainPortDefault, matching, &iterator) == KERN_SUCCESS
+        else {
             return nil
         }
         defer { IOObjectRelease(iterator) }
@@ -23,14 +47,18 @@ enum GPUUsage {
             defer { IOObjectRelease(current) }
 
             var propertiesRef: Unmanaged<CFMutableDictionary>?
-            guard IORegistryEntryCreateCFProperties(current, &propertiesRef, kCFAllocatorDefault, 0) == KERN_SUCCESS,
-                  let properties = propertiesRef?.takeRetainedValue() as NSDictionary?,
-                  let stats = properties["PerformanceStatistics"] as? NSDictionary
+            guard
+                IORegistryEntryCreateCFProperties(current, &propertiesRef, kCFAllocatorDefault, 0)
+                    == KERN_SUCCESS,
+                let properties = propertiesRef?.takeRetainedValue() as NSDictionary?,
+                let stats = properties["PerformanceStatistics"] as? NSDictionary
             else {
                 continue
             }
 
-            if let value = doubleValue(in: stats, keys: ["Device Utilization %", "Renderer Utilization %"]) {
+            if let value = doubleValue(
+                in: stats, keys: ["Device Utilization %", "Renderer Utilization %"])
+            {
                 return min(100, max(0, value))
             }
             if let active = doubleValue(in: stats, keys: ["Device Active"]) {

@@ -8,32 +8,28 @@ private struct MonitoringSnapshot: Sendable {
     let gpuUsage: Double?
     let memory: MemorySnapshot
     let sensors: SensorSnapshot
-    let topCPUProcesses: [ProcessCPUInfo]
 }
 
 private actor SystemSampler {
     private var previousCPUTicks: host_cpu_load_info?
+    private let gpuReader = GPUUsage()
     private let sensorReader = SMCTemperatureReader()
-    private let processScanner = ProcessCPUScanner()
 
-    func sample(includeTopProcesses: Bool) async -> MonitoringSnapshot {
-        async let gpuUsage = GPUUsage.current()
+    func sample() async -> MonitoringSnapshot {
+        async let gpuUsage = gpuReader.current()
         async let sensors = sensorReader.currentSnapshot()
         let cpuUsage = CPUUsage.currentTotalUsage(previous: &previousCPUTicks)
         let memory = MemoryUsage.current()
-        let topCPUProcesses = includeTopProcesses ? processScanner.topProcesses(limit: 3) : []
         return MonitoringSnapshot(
             cpuUsage: cpuUsage,
             gpuUsage: await gpuUsage,
             memory: memory,
-            sensors: await sensors,
-            topCPUProcesses: topCPUProcesses
+            sensors: await sensors
         )
     }
 
     func resetDeltas() {
         previousCPUTicks = nil
-        processScanner.reset()
     }
 }
 
@@ -44,7 +40,8 @@ final class SystemMonitor {
     private(set) var cpuUsage: Double = 0
     private(set) var gpuUsage: Double?
     private(set) var memoryUsedGB: Double = 0
-    private(set) var memoryTotalGB: Double = Double(ProcessInfo.processInfo.physicalMemory) / 1_073_741_824
+    private(set) var memoryTotalGB: Double =
+        Double(ProcessInfo.processInfo.physicalMemory) / 1_073_741_824
     private(set) var lastUpdated: Date = Date()
     private(set) var history: [SystemSample] = []
     private(set) var isMonitoring = true
@@ -52,7 +49,6 @@ final class SystemMonitor {
     private(set) var temperatureSensorKey: String?
     private(set) var fanCount: Int?
     private(set) var fanSpeeds: [Int?] = []
-    private(set) var topCPUProcesses: [ProcessCPUInfo] = []
 
     private let settings: AppSettings
     private let sampler = SystemSampler()
@@ -63,8 +59,10 @@ final class SystemMonitor {
     private var thermalObserver: NSObjectProtocol?
     private var sleepObserver: NSObjectProtocol?
     private var wakeObserver: NSObjectProtocol?
-    private var isSleeping = false
-    private var topProcessesVisible = false
+    private var displaySleepObserver: NSObjectProtocol?
+    private var displayWakeObserver: NSObjectProtocol?
+    private var isSystemSleeping = false
+    private var isDisplaySleeping = false
 
     init(settings: AppSettings) {
         self.settings = settings
@@ -76,7 +74,7 @@ final class SystemMonitor {
     func rescheduleTimer() {
         timer?.invalidate()
         timer = nil
-        guard isMonitoring, !isSleeping else { return }
+        guard isMonitoring, !isSystemSleeping, !isDisplaySleeping else { return }
 
         let interval = settings.pollInterval
         let newTimer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
@@ -96,31 +94,20 @@ final class SystemMonitor {
             refresh()
         } else {
             cancelPendingRefresh()
-            topCPUProcesses = []
         }
         rescheduleTimer()
     }
 
-    func setTopProcessesVisible(_ visible: Bool) {
-        topProcessesVisible = visible && settings.showTopCPUApps
-        if topProcessesVisible {
-            refresh()
-        } else {
-            topCPUProcesses = []
-        }
-    }
-
     func refresh() {
-        guard isMonitoring, !isSleeping else { return }
+        guard isMonitoring, !isSystemSleeping, !isDisplaySleeping else { return }
         guard refreshTask == nil else {
             pendingRefresh = true
             return
         }
 
-        let includeTopProcesses = topProcessesVisible && settings.showTopCPUApps
         let generation = refreshGeneration
         refreshTask = Task { [weak self, sampler] in
-            let snapshot = await sampler.sample(includeTopProcesses: includeTopProcesses)
+            let snapshot = await sampler.sample()
             guard !Task.isCancelled, let self, self.refreshGeneration == generation else { return }
             self.refreshTask = nil
             self.apply(snapshot)
@@ -141,7 +128,6 @@ final class SystemMonitor {
         temperatureSensorKey = snapshot.sensors.temperatureSensorKey
         fanCount = snapshot.sensors.fanCount
         fanSpeeds = snapshot.sensors.fanSpeeds
-        topCPUProcesses = snapshot.topCPUProcesses
         lastUpdated = Date()
         recordSample(at: lastUpdated)
 
@@ -172,7 +158,9 @@ final class SystemMonitor {
         )
 
         let cutoff = timestamp.addingTimeInterval(-settings.historyRetentionMinutes * 60)
-        if let firstRetainedIndex = history.firstIndex(where: { $0.timestamp >= cutoff }), firstRetainedIndex > 0 {
+        if let firstRetainedIndex = history.firstIndex(where: { $0.timestamp >= cutoff }),
+            firstRetainedIndex > 0
+        {
             history.removeFirst(firstRetainedIndex)
         }
     }
@@ -196,7 +184,7 @@ final class SystemMonitor {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor in
-                self?.prepareForSleep()
+                self?.prepareForSystemSleep()
             }
         }
         wakeObserver = workspaceCenter.addObserver(
@@ -205,27 +193,62 @@ final class SystemMonitor {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor in
-                self?.resumeAfterWake()
+                self?.resumeAfterSystemWake()
+            }
+        }
+        displaySleepObserver = workspaceCenter.addObserver(
+            forName: NSWorkspace.screensDidSleepNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.prepareForDisplaySleep()
+            }
+        }
+        displayWakeObserver = workspaceCenter.addObserver(
+            forName: NSWorkspace.screensDidWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.resumeAfterDisplayWake()
             }
         }
     }
 
-    private func prepareForSleep() {
-        isSleeping = true
+    private func prepareForSystemSleep() {
+        isSystemSleeping = true
+        pauseForSleep()
+    }
+
+    private func prepareForDisplaySleep() {
+        isDisplaySleeping = true
+        pauseForSleep()
+    }
+
+    private func pauseForSleep() {
         timer?.invalidate()
         timer = nil
         cancelPendingRefresh()
     }
 
-    private func resumeAfterWake() {
-        guard isSleeping else { return }
-        isSleeping = false
+    private func resumeAfterSystemWake() {
+        guard isSystemSleeping else { return }
+        isSystemSleeping = false
         Task { [weak self, sampler] in
             await sampler.resetDeltas()
-            guard let self else { return }
+            guard let self, !self.isDisplaySleeping else { return }
             self.refresh()
             self.rescheduleTimer()
         }
+    }
+
+    private func resumeAfterDisplayWake() {
+        guard isDisplaySleeping else { return }
+        isDisplaySleeping = false
+        guard !isSystemSleeping else { return }
+        refresh()
+        rescheduleTimer()
     }
 
     private func updateThermalState(_ newState: ProcessInfo.ThermalState) {

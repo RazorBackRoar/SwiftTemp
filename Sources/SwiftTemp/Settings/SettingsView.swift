@@ -44,13 +44,14 @@ struct SettingsView: View {
                 }
             }
 
-            Toggle("Allow top CPU process details", isOn: $settings.showTopCPUApps)
             Toggle("Show Dock icon", isOn: $settings.showDockIcon)
             LaunchAtLoginToggle()
 
-            Text("Degree readings use an undocumented SMC interface and may be unavailable. Apple’s Thermal State remains the supported system-health indicator.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            Text(
+                "Degree readings use an undocumented SMC interface and may be unavailable. Apple’s Thermal State remains the supported system-health indicator."
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
         }
     }
 
@@ -67,13 +68,15 @@ struct SettingsView: View {
                 }
             }
 
-            Toggle("Experimental temperature threshold", isOn: $settings.highTemperatureAlertsEnabled)
-                .onChange(of: settings.highTemperatureAlertsEnabled) {
-                    ThermalNotifier.resetHighTemperatureState()
-                    if settings.highTemperatureAlertsEnabled {
-                        ThermalNotifier.requestAuthorizationIfNeeded()
-                    }
+            Toggle(
+                "Experimental temperature threshold", isOn: $settings.highTemperatureAlertsEnabled
+            )
+            .onChange(of: settings.highTemperatureAlertsEnabled) {
+                ThermalNotifier.resetHighTemperatureState()
+                if settings.highTemperatureAlertsEnabled {
+                    ThermalNotifier.requestAuthorizationIfNeeded()
                 }
+            }
 
             if settings.highTemperatureAlertsEnabled {
                 VStack(alignment: .leading, spacing: 6) {
@@ -91,9 +94,11 @@ struct SettingsView: View {
                 }
             }
 
-            Text("Temperature alerts are opt-in because the value is an unsupported, model-dependent chip-sensor reading—not an Apple overheating diagnosis.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            Text(
+                "Temperature alerts are opt-in because the value is an unsupported, model-dependent chip-sensor reading—not an Apple overheating diagnosis."
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
         }
     }
 

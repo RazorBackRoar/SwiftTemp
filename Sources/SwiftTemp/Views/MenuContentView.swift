@@ -7,7 +7,6 @@ struct MenuContentView: View {
 
     @Environment(\.openWindow) private var openWindow
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var showTopCPU: Bool = false
 
     private static let timeFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -53,11 +52,14 @@ struct MenuContentView: View {
 
                     Spacer()
 
-                    Text(Temperature.format(celsius: monitor.temperatureCelsius, unit: settings.temperatureUnit))
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundStyle(.orange)
-                        .frame(minWidth: 65, alignment: .trailing)
+                    Text(
+                        Temperature.format(
+                            celsius: monitor.temperatureCelsius, unit: settings.temperatureUnit)
+                    )
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(.orange)
+                    .frame(minWidth: 65, alignment: .trailing)
                 }
                 .help(sensorHelpText)
 
@@ -78,7 +80,7 @@ struct MenuContentView: View {
                             Spacer()
 
                             if let rpm {
-                                Text(rpm > 0 ? "\(rpm) RPM" : "0 RPM")
+                                Text(rpm > 0 ? "\(rpm) RPM" : "Stopped")
                                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                                     .monospacedDigit()
                                     .foregroundStyle(rpm > 0 ? .blue : .secondary)
@@ -101,149 +103,132 @@ struct MenuContentView: View {
             // MARK: - CPU / GPU / Memory Card
             VStack(spacing: 14) {
                 // CPU
-                VStack(spacing: 4) {
-                    HStack {
+                Button {
+                    openBreakdownWindow(id: "cpuBreakdown")
+                } label: {
+                    VStack(spacing: 4) {
                         cpuSummary()
-                        if settings.showTopCPUApps {
-                            Button {
-                                showTopCPU.toggle()
-                                monitor.setTopProcessesVisible(showTopCPU)
-                            } label: {
-                                Image(systemName: showTopCPU ? "chevron.down" : "chevron.right")
-                                    .font(.system(size: 9, weight: .bold))
-                                    .foregroundStyle(.secondary)
-                                    .frame(width: 10)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityHint("Shows or hides the highest CPU-using processes")
-                        }
-                    }
 
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            Capsule()
-                                .fill(Color.primary.opacity(0.08))
-                            Capsule()
-                                .fill(.green)
-                                .frame(width: geo.size.width * min(1, max(0, monitor.cpuUsage / 100)))
-                                .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: monitor.cpuUsage)
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                Capsule()
+                                    .fill(Color.primary.opacity(0.08))
+                                Capsule()
+                                    .fill(.green)
+                                    .frame(
+                                        width: geo.size.width
+                                            * min(1, max(0, monitor.cpuUsage / 100))
+                                    )
+                                    .animation(
+                                        reduceMotion ? nil : .easeOut(duration: 0.2),
+                                        value: monitor.cpuUsage)
+                            }
                         }
+                        .frame(height: 4)
                     }
-                    .frame(height: 4)
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
+                .accessibilityHint("Opens the CPU process breakdown")
 
                 // GPU
-                VStack(spacing: 4) {
-                    HStack {
-                        metricIcon("display", color: .blue)
-                            .accessibilityHidden(true)
+                Button {
+                    openBreakdownWindow(id: "gpuBreakdown")
+                } label: {
+                    VStack(spacing: 4) {
+                        HStack {
+                            metricIcon("display", color: .blue)
+                                .accessibilityHidden(true)
 
-                        Text("GPU")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.secondary)
-
-                        Spacer()
-
-                        if let gpu = monitor.gpuUsage {
-                            Text(String(format: "%.0f%%", gpu))
-                                .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                                .monospacedDigit()
-                                .foregroundStyle(.blue)
-                        } else {
-                            Text("Not Available")
-                                .font(.system(size: 12, weight: .semibold))
+                            Text("GPU")
+                                .font(.system(size: 12, weight: .medium))
                                 .foregroundStyle(.secondary)
+
+                            Spacer()
+
+                            if let gpu = monitor.gpuUsage {
+                                Text(String(format: "%.0f%%", gpu))
+                                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                                    .monospacedDigit()
+                                    .foregroundStyle(.blue)
+                            } else {
+                                Text("Not Available")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            detailsLabel(tint: .blue)
                         }
 
-                        detailsButton(windowID: "gpuBreakdown", tint: .blue)
-                    }
-
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            Capsule()
-                                .fill(Color.primary.opacity(0.08))
-                            Capsule()
-                                .fill(.blue)
-                                .frame(width: geo.size.width * min(1, max(0, (monitor.gpuUsage ?? 0) / 100)))
-                                .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: monitor.gpuUsage ?? 0)
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                Capsule()
+                                    .fill(Color.primary.opacity(0.08))
+                                Capsule()
+                                    .fill(.blue)
+                                    .frame(
+                                        width: geo.size.width
+                                            * min(1, max(0, (monitor.gpuUsage ?? 0) / 100))
+                                    )
+                                    .animation(
+                                        reduceMotion ? nil : .easeOut(duration: 0.2),
+                                        value: monitor.gpuUsage ?? 0)
+                            }
                         }
+                        .frame(height: 4)
                     }
-                    .frame(height: 4)
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
+                .accessibilityHint("Opens the GPU process breakdown")
 
                 // Memory
-                VStack(spacing: 4) {
-                    HStack {
-                        metricIcon("memorychip", color: .red)
-                            .accessibilityHidden(true)
+                Button {
+                    openBreakdownWindow(id: "memoryBreakdown")
+                } label: {
+                    VStack(spacing: 4) {
+                        HStack {
+                            metricIcon("memorychip", color: .red)
+                                .accessibilityHidden(true)
 
-                        Text("Memory")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.secondary)
+                            Text("Memory")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(.secondary)
 
-                        Spacer()
+                            Spacer()
 
-                        Text(String(format: "%.1f / %.0f GB", monitor.memoryUsedGB, monitor.memoryTotalGB))
+                            Text(
+                                String(
+                                    format: "%.1f / %.0f GB", monitor.memoryUsedGB,
+                                    monitor.memoryTotalGB)
+                            )
                             .font(.system(size: 12, weight: .semibold, design: .monospaced))
                             .monospacedDigit()
                             .foregroundStyle(.red)
 
-                        detailsButton(windowID: "memoryBreakdown", tint: .red)
-                    }
-
-                    GeometryReader { geo in
-                        let ratio = monitor.memoryTotalGB > 0 ? (monitor.memoryUsedGB / monitor.memoryTotalGB) : 0
-                        ZStack(alignment: .leading) {
-                            Capsule()
-                                .fill(Color.primary.opacity(0.08))
-                            Capsule()
-                                .fill(.red)
-                                .frame(width: geo.size.width * min(1, max(0, ratio)))
-                                .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: ratio)
+                            detailsLabel(tint: .red)
                         }
-                    }
-                    .frame(height: 4)
-                }
 
-                if settings.showTopCPUApps && showTopCPU {
-                    Divider()
-                        .padding(.vertical, 2)
-
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("TOP CPU PROCESSES")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(.secondary)
-
-                        let topList = monitor.topCPUProcesses
-                        if topList.isEmpty {
-                            HStack {
-                                Text("Scanning processes…")
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                            }
-                            .frame(height: 16)
-                        } else {
-                            ForEach(topList.prefix(3)) { proc in
-                                HStack {
-                                    Text(proc.name)
-                                        .lineLimit(1)
-                                        .truncationMode(.tail)
-                                    Spacer()
-                                    Text(String(format: "%.1f%%", proc.cpuPercent))
-                                        .font(.system(size: 11, design: .monospaced))
-                                        .monospacedDigit()
-                                        .fontWeight(.medium)
-                                        .foregroundStyle(.green)
-                                        .frame(width: 48, alignment: .trailing)
-                                }
-                                .font(.system(size: 11))
-                                .foregroundStyle(.secondary)
-                                .frame(height: 16)
+                        GeometryReader { geo in
+                            let ratio =
+                                monitor.memoryTotalGB > 0
+                                ? (monitor.memoryUsedGB / monitor.memoryTotalGB) : 0
+                            ZStack(alignment: .leading) {
+                                Capsule()
+                                    .fill(Color.primary.opacity(0.08))
+                                Capsule()
+                                    .fill(.red)
+                                    .frame(width: geo.size.width * min(1, max(0, ratio)))
+                                    .animation(
+                                        reduceMotion ? nil : .easeOut(duration: 0.2), value: ratio)
                             }
                         }
+                        .frame(height: 4)
                     }
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
+                .accessibilityHint("Opens the memory process breakdown")
             }
             .padding(10)
             .background(
@@ -327,9 +312,10 @@ struct MenuContentView: View {
                 }
                 .buttonStyle(MenuActionButtonStyle())
                 .keyboardShortcut(",", modifiers: .command)
-                .simultaneousGesture(TapGesture().onEnded {
-                    NSApp.activate(ignoringOtherApps: true)
-                })
+                .simultaneousGesture(
+                    TapGesture().onEnded {
+                        NSApp.activate(ignoringOtherApps: true)
+                    })
 
                 Button {
                     NSApplication.shared.terminate(nil)
@@ -343,16 +329,6 @@ struct MenuContentView: View {
         }
         .padding(12)
         .frame(width: 300)
-        .onDisappear {
-            showTopCPU = false
-            monitor.setTopProcessesVisible(false)
-        }
-        .onChange(of: settings.showTopCPUApps) {
-            if !settings.showTopCPUApps {
-                showTopCPU = false
-                monitor.setTopProcessesVisible(false)
-            }
-        }
     }
 
     private func cpuSummary() -> some View {
@@ -372,21 +348,19 @@ struct MenuContentView: View {
                 .foregroundStyle(.green)
                 .frame(width: 55, alignment: .trailing)
 
-            detailsButton(windowID: "cpuBreakdown", tint: .green)
+            detailsLabel(tint: .green)
         }
     }
 
-    private func detailsButton(windowID: String, tint: Color) -> some View {
-        Button {
-            NSApp.activate(ignoringOtherApps: true)
-            openWindow(id: windowID)
-        } label: {
-            Text("Details")
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(tint)
-        }
-        .buttonStyle(.plain)
-        .accessibilityHint("Shows which processes are using this resource")
+    private func detailsLabel(tint: Color) -> some View {
+        Text("Details")
+            .font(.system(size: 11, weight: .medium))
+            .foregroundStyle(tint)
+    }
+
+    private func openBreakdownWindow(id: String) {
+        NSApp.activate(ignoringOtherApps: true)
+        openWindow(id: id)
     }
 
     private func metricIcon(_ systemName: String, color: Color) -> some View {
@@ -421,7 +395,8 @@ struct MenuContentView: View {
 
     private var sensorHelpText: String {
         if let key = monitor.temperatureSensorKey {
-            return "Experimental private SMC reading from compute sensor \(key). This is not an Apple thermal diagnosis."
+            return
+                "Experimental private SMC reading from compute sensor \(key). This is not an Apple thermal diagnosis."
         }
         return "No supported degree API exists. Apple Thermal State above remains authoritative."
     }
@@ -466,7 +441,9 @@ struct MenuContentView: View {
             .padding(.vertical, 2.5)
             .background(
                 Capsule()
-                    .fill(monitor.isMonitoring ? Color.green.opacity(0.12) : Color.secondary.opacity(0.12))
+                    .fill(
+                        monitor.isMonitoring
+                            ? Color.green.opacity(0.12) : Color.secondary.opacity(0.12))
             )
         }
     }

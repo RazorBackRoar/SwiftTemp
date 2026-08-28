@@ -91,11 +91,15 @@ final class AppSettings {
     }
 
     var highTemperatureAlertsEnabled: Bool {
-        didSet { defaults.set(highTemperatureAlertsEnabled, forKey: Keys.highTemperatureAlertsEnabled) }
+        didSet {
+            defaults.set(highTemperatureAlertsEnabled, forKey: Keys.highTemperatureAlertsEnabled)
+        }
     }
 
     var highTempThresholdFahrenheit: Double {
-        didSet { defaults.set(highTempThresholdFahrenheit, forKey: Keys.highTempThresholdFahrenheit) }
+        didSet {
+            defaults.set(highTempThresholdFahrenheit, forKey: Keys.highTempThresholdFahrenheit)
+        }
     }
 
     var verboseLogging: Bool {
@@ -104,10 +108,6 @@ final class AppSettings {
 
     var temperatureUnit: TemperatureUnit {
         didSet { defaults.set(temperatureUnit.rawValue, forKey: Keys.temperatureUnit) }
-    }
-
-    var showTopCPUApps: Bool {
-        didSet { defaults.set(showTopCPUApps, forKey: Keys.showTopCPUApps) }
     }
 
     init(defaults: UserDefaults = .standard) {
@@ -127,24 +127,28 @@ final class AppSettings {
             options: Self.historyWindowOptions,
             fallback: 60
         )
-        menuBarDisplayMode = MenuBarDisplayMode(rawValue: defaults.string(forKey: Keys.menuBarDisplayMode) ?? "")
+        menuBarDisplayMode =
+            MenuBarDisplayMode(rawValue: defaults.string(forKey: Keys.menuBarDisplayMode) ?? "")
             ?? .temperatureAndSystem
         showDockIcon = defaults.object(forKey: Keys.showDockIcon) as? Bool ?? false
-        notificationThreshold = NotificationThreshold(
-            rawValue: defaults.string(forKey: Keys.notificationThreshold) ?? ""
-        ) ?? .off
-        highTemperatureAlertsEnabled = defaults.object(forKey: Keys.highTemperatureAlertsEnabled) as? Bool ?? false
+        notificationThreshold =
+            NotificationThreshold(
+                rawValue: defaults.string(forKey: Keys.notificationThreshold) ?? ""
+            ) ?? .off
+        highTemperatureAlertsEnabled =
+            defaults.object(forKey: Keys.highTemperatureAlertsEnabled) as? Bool ?? false
         highTempThresholdFahrenheit = min(
             200,
             max(130, defaults.object(forKey: Keys.highTempThresholdFahrenheit) as? Double ?? 185)
         )
         verboseLogging = defaults.object(forKey: Keys.verboseLogging) as? Bool ?? false
-        temperatureUnit = TemperatureUnit(rawValue: defaults.string(forKey: Keys.temperatureUnit) ?? "")
+        temperatureUnit =
+            TemperatureUnit(rawValue: defaults.string(forKey: Keys.temperatureUnit) ?? "")
             ?? .fahrenheit
-        showTopCPUApps = defaults.object(forKey: Keys.showTopCPUApps) as? Bool ?? true
     }
 
-    private static func validOption(_ value: Double?, options: [Double], fallback: Double) -> Double {
+    private static func validOption(_ value: Double?, options: [Double], fallback: Double) -> Double
+    {
         guard let value, options.contains(value) else { return fallback }
         return value
     }
@@ -160,6 +164,5 @@ final class AppSettings {
         static let highTempThresholdFahrenheit = "highTempThresholdFahrenheit"
         static let verboseLogging = "verboseLogging"
         static let temperatureUnit = "temperatureUnit"
-        static let showTopCPUApps = "showTopCPUApps"
     }
 }

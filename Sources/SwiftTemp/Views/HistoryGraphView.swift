@@ -10,8 +10,9 @@ struct HistoryGraphView: View {
         let now = Date()
         let startTime = now.addingTimeInterval(-max(60, windowMinutes * 60))
         let chartSamples = temperatureSamples
-        let lineStyle: some ShapeStyle = Color.orange
-        let areaStyle = areaGradient(color: .orange)
+        let tint = Temperature.tint(celsius: chartSamples.last?.temperatureCelsius)
+        let lineStyle: some ShapeStyle = tint
+        let areaStyle = areaGradient(color: tint)
 
         Chart {
             ForEach(chartSamples) { sample in
@@ -82,7 +83,9 @@ struct HistoryGraphView: View {
     private var yDomain: ClosedRange<Double> {
         let lowerCelsius = 20.0
         let upperCelsius = 120.0
-        return Temperature.value(celsius: lowerCelsius, unit: unit)...Temperature.value(celsius: upperCelsius, unit: unit)
+        return Temperature.value(
+            celsius: lowerCelsius, unit: unit)...Temperature.value(
+                celsius: upperCelsius, unit: unit)
     }
 
     private var yTicks: [Double] {
@@ -100,7 +103,10 @@ struct HistoryGraphView: View {
     }
 
     private var accessibilitySummary: String {
-        guard let celsius = temperatureSamples.last?.temperatureCelsius else { return "No sensor data yet" }
-        return "Latest experimental chip sensor reading \(Temperature.format(celsius: celsius, unit: unit))"
+        guard let celsius = temperatureSamples.last?.temperatureCelsius else {
+            return "No sensor data yet"
+        }
+        return
+            "Latest experimental chip sensor reading \(Temperature.format(celsius: celsius, unit: unit))"
     }
 }

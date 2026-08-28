@@ -26,10 +26,11 @@ enum Temperature {
     static func tint(celsius: Double?) -> Color {
         guard let celsius, celsius.isFinite else { return .secondary }
         switch celsius {
-        case ..<65: return .yellow
-        case ..<85: return .orange
-        case ..<100: return .red
-        default: return .purple
+        case ..<50: return .blue
+        case ..<75: return .green
+        case ..<95: return .yellow
+        case ..<105: return .orange
+        default: return .red
         }
     }
 }

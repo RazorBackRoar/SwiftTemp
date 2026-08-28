@@ -18,7 +18,13 @@ RESOURCE_BUNDLE="$PROJECT_DIR/.build/release/${APP_NAME}_${APP_NAME}.bundle"
 echo "Building $APP_NAME release..."
 cd "$PROJECT_DIR"
 
-swift build -c release
+swift build -c release --arch arm64
+
+ARCHITECTURES="$(lipo -archs "$EXEC_PATH")"
+if [ "$ARCHITECTURES" != "arm64" ]; then
+  echo "Error: expected arm64 executable, found: $ARCHITECTURES" >&2
+  exit 1
+fi
 
 echo "Packaging $APP_NAME.app..."
 rm -rf "$APP_PATH" "$DMG_PATH"

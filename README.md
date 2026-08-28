@@ -25,7 +25,7 @@ The app is built and packaged for arm64 on macOS 15 or later. Private sensor ava
 - [Download](#download)
 - [What it does](#what-it-does)
 - [Degree readings (private API, experimental)](#degree-readings-private-api-experimental)
-- [Memory breakdown & killing processes](#memory-breakdown--killing-processes)
+- [Process breakdown & killing processes](#process-breakdown--killing-processes)
 - [What's not included, and why](#whats-not-included-and-why)
 - [Requirements](#requirements)
 - [Project structure](#project-structure)
@@ -52,12 +52,12 @@ The latest release is available on the [Releases page](https://github.com/RazorB
   - Thermal state (Nominal / Fair / Serious / Critical), color-coded
     green → yellow → red → purple
   - Experimental hottest compute-sensor temperature (°F by default, °C optional) when a plausible private SMC key is available — “Unavailable” otherwise
-  - CPU usage %
-  - GPU usage % when the Apple GPU reports utilization through IORegistry
-  - Memory used / total (GB), with a link to the full process breakdown
+  - CPU usage %, with the full row opening the process breakdown
+  - GPU usage % when the Apple GPU reports utilization through IORegistry, with the full row opening the process breakdown
+  - Memory used / total (GB), with the full row opening the process breakdown
   - Last-updated timestamp
   - Current monitoring status, with a **Pause/Resume Monitoring** control
-  - A live, bounded-point chip-temperature history graph (Swift Charts), colored yellow → orange → red → purple by measured value
+  - A live, bounded-point chip-temperature history graph (Swift Charts), colored blue → green → yellow → orange → red by measured value
 - **Memory breakdown window** — per-process memory, largest first, with a
   one-click **Quit** (right-click for **Force Quit**); local-AI runtimes
   (Ollama, LM Studio, etc.) are flagged when detected by name.
@@ -83,11 +83,11 @@ This value is a model-dependent chip-sensor reading, not an Apple overheating di
 
 All private reads are optional and range-checked. A failed connection, unknown format, unexpected key table, or unsupported machine returns “Unavailable” without blocking CPU/memory/thermal-state monitoring.
 
-## Memory breakdown & killing processes
+## Process breakdown & killing processes
 
-Click **View Memory Breakdown…** in the popover (or under the Memory
-Used row) to open a separate window listing every process the current
-user can inspect, sorted largest-first, via the macOS `libproc` interfaces (`proc_listallpids`, `proc_pidinfo`, and `proc_name`).
+Click the **CPU**, **GPU**, or **Memory** row in the popover to open a
+separate window ranking processes by the selected resource. CPU and memory
+use the macOS `libproc` interfaces; GPU ranks Metal clients using IORegistry data.
 
 - **Quit** sends `SIGTERM` (graceful); right-click a row → **Force Quit**
   sends `SIGKILL`. Both require confirmation first.
@@ -125,8 +125,6 @@ swift --version
 SwiftTemp/
 ├── Package.swift
 ├── README.md
-├── Resources/
-│   └── AppIcon.icns
 ├── Tests/
 │   └── SwiftTempTests/
 │       └── SwiftTempTests.swift
@@ -136,6 +134,7 @@ SwiftTemp/
     └── SwiftTemp/
         ├── SwiftTempApp.swift           # @main entry, MenuBarExtra + Settings scenes
         ├── AppDelegate.swift            # Initial Dock-icon policy
+        ├── Resources/                   # Canonical app icon and version metadata
         ├── Models/
         │   ├── ThermalState+Extensions.swift   # Label/icon/color per thermal state
         │   ├── SystemSample.swift              # One historical data point
@@ -227,9 +226,9 @@ it's actually running from `/Applications`.
   displayed values stay frozen at their last reading (the popover's
   "Monitoring: Paused" row makes this explicit).
 - **History graph** — shows experimental chip-sensor temperature over the configured time window. Rendering is capped at roughly 180 points while full retained history remains in memory.
-- **View Memory Breakdown…** — opens a separate window with per-process
-  memory, largest first; **Quit** per row, right-click for **Force
-  Quit**. See [Memory breakdown & killing processes](#memory-breakdown--killing-processes).
+- **CPU / GPU / Memory rows** — click anywhere on a row to open its process
+  breakdown; **Quit** per row, right-click for **Force Quit**. See
+  [Process breakdown & killing processes](#process-breakdown--killing-processes).
 - **Refresh Now** — forces an immediate sample.
 - **Settings…** (⌘,) — opens the Settings window.
 - **Quit SwiftTemp** — exits cleanly.
@@ -241,9 +240,8 @@ it's actually running from `/Applications`.
 ### General
 
 - *Temperature unit* — Fahrenheit / Celsius. Default **Fahrenheit**; applies to the menu bar, popover, graph, and accessibility text.
-- *Refresh interval* — 1/2/5/10/30/60 seconds. Default **2 seconds**. Polling is rescheduled immediately with run-loop tolerance for timer coalescing.
+- *Refresh interval* — 1/2/5/10/30/60 seconds. Default **1 second**. Polling is rescheduled immediately with run-loop tolerance for timer coalescing.
 - *Menu bar* — Icon Only / Temperature Only / Temperature + System Stats.
-- *Allow top CPU process details* — process enumeration runs only while the expandable details are visible.
 - *Show Dock icon* — off by default; updates the activation policy without relaunching.
 - *Launch at login* — uses `SMAppService.mainApp` and reports when System Settings approval is required.
 
