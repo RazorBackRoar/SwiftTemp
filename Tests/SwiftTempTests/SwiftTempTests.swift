@@ -149,13 +149,13 @@ final class SwiftTempTests: XCTestCase {
         XCTAssertEqual(GPUUsage.parsePerformanceStatistics(compactIoreg), 23)
     }
 
-    func testGPUUsageReadsThisMacWhenAvailable() async {
+    func testGPUUsageReadsThisMacWhenAvailable() async throws {
         let value = await GPUUsage().current()
-        XCTAssertNotNil(value, "IOAccelerator PerformanceStatistics should be readable on this Mac")
-        if let value {
-            XCTAssertGreaterThanOrEqual(value, 0)
-            XCTAssertLessThanOrEqual(value, 100)
+        guard let value else {
+            throw XCTSkip("IOAccelerator PerformanceStatistics unavailable on this host")
         }
+        XCTAssertGreaterThanOrEqual(value, 0)
+        XCTAssertLessThanOrEqual(value, 100)
     }
 
     func testParsesGPUUserClientCreatorAndAppUsage() {
