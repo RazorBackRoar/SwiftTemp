@@ -33,4 +33,19 @@ enum Temperature {
         default: return .red
         }
     }
+
+    /// Icon fill fraction: derived from the measured degree reading when available,
+    /// otherwise falls back to the public thermal state so the icon still shows something.
+    static func fillFraction(celsius: Double?, fallbackThermalState: ProcessInfo.ThermalState) -> Double {
+        guard let celsius else {
+            switch fallbackThermalState {
+            case .nominal: return 0.35
+            case .fair: return 0.55
+            case .serious: return 0.80
+            case .critical: return 1.0
+            @unknown default: return 0.4
+            }
+        }
+        return min(1.0, max(0.25, (celsius - 20.0) / 75.0))
+    }
 }

@@ -47,7 +47,7 @@ Local output: `build/Release/SwiftTemp.dmg`.
 
 ## Learned Workspace Facts
 
-- SwiftTemp is a RazorBackRoar product app at v1.0.0 (`Sources/SwiftTemp/Resources/version.json`); native Swift 6 menu bar thermal monitor for Apple Silicon.
+- SwiftTemp is a RazorBackRoar product app at v1.0.1 (`Sources/SwiftTemp/Resources/version.json`); native Swift 6 menu bar thermal monitor for Apple Silicon.
 - After a new install, quit the previous menu bar extra or the old UI stays on screen.
 
 ## Repository rules

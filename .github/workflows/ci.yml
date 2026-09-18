@@ -25,3 +25,14 @@ jobs:
 
       - name: Test
         run: swift test
+
+      - name: Build release (arm64)
+        run: swift build -c release --arch arm64
+
+      - name: Verify arm64-only binary
+        run: |
+          ARCHS="$(lipo -archs .build/release/SwiftTemp)"
+          if [ "$ARCHS" != "arm64" ]; then
+            echo "Error: expected arm64 executable, found: $ARCHS" >&2
+            exit 1
+          fi

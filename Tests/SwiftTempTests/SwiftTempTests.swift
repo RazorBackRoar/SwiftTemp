@@ -172,9 +172,11 @@ final class SwiftTempTests: XCTestCase {
         XCTAssertEqual(ProcessGPUScanner.accumulatedGPUTime(fromAppUsage: []), 0)
     }
 
-    func testGPUClientSnapshotFindsMetalProcesses() {
+    func testGPUClientSnapshotFindsMetalProcesses() throws {
         let totals = ProcessGPUScanner.accumulatedTimesByPID()
-        XCTAssertFalse(totals.isEmpty, "AGXDeviceUserClient should list GPU clients on this Mac")
+        guard !totals.isEmpty else {
+            throw XCTSkip("No AGXDeviceUserClient GPU clients found on this host")
+        }
         XCTAssertTrue(totals.values.contains { $0.nanoseconds > 0 })
     }
 
@@ -188,8 +190,10 @@ final class SwiftTempTests: XCTestCase {
         }
     }
 
-    func testSMCHardwareIntegrationWhenAvailable() {
-        guard let connection = SMCConnection() else { return }
+    func testSMCHardwareIntegrationWhenAvailable() throws {
+        guard let connection = SMCConnection() else {
+            throw XCTSkip("No AppleSMC connection available on this host")
+        }
         XCTAssertTrue(connection.isOpen)
 
         let keys = connection.discoverTemperatureKeys()

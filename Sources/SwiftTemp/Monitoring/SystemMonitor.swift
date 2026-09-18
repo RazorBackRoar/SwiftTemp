@@ -71,6 +71,18 @@ final class SystemMonitor {
         rescheduleTimer()
     }
 
+    isolated deinit {
+        if let thermalObserver {
+            NotificationCenter.default.removeObserver(thermalObserver)
+        }
+        let workspaceCenter = NSWorkspace.shared.notificationCenter
+        for observer in [sleepObserver, wakeObserver, displaySleepObserver, displayWakeObserver] {
+            if let observer {
+                workspaceCenter.removeObserver(observer)
+            }
+        }
+    }
+
     func rescheduleTimer() {
         timer?.invalidate()
         timer = nil

@@ -402,16 +402,7 @@ struct MenuContentView: View {
     }
 
     private var temperatureFraction: Double {
-        guard let c = monitor.temperatureCelsius else {
-            switch monitor.thermalState {
-            case .nominal: return 0.35
-            case .fair: return 0.55
-            case .serious: return 0.80
-            case .critical: return 1.0
-            @unknown default: return 0.4
-            }
-        }
-        return min(1.0, max(0.25, (c - 20.0) / 75.0))
+        Temperature.fillFraction(celsius: monitor.temperatureCelsius, fallbackThermalState: monitor.thermalState)
     }
 
     private var header: some View {
